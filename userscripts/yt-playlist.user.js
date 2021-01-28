@@ -7,13 +7,12 @@
 
 // -----------------[Add the following exceptions]------------------|
 // 4chanX's Settings > Advanced > Javascript Whitelist              |
-// https://s.ytimg.com                                              |
 // https://www.youtube.com/iframe_api                               |
+// https://www.youtube.com/s/player/                                |
 // -----------------------------------------------------------------|
 // uBlock Origin's Dashboard > My filters                           |
-// @@||s.ytimg.com$script,domain=boards.4channel.org                |
-// @@||www.youtube.com/iframe_api$script,domain=boards.4channel.org |
-// @@||www.youtube.com/s/player/*$script,domain=boards.4channel.org |
+// @@||www.youtube.com/iframe_api$script,domain=4channel.org        |
+// @@||www.youtube.com/s/player/*$script,domain=4channel.org        |
 // -----------------------------------------------------------------|
 
 var css, thread, posts, container, playlist, ytPlayer, toggle, threadIds = [],
