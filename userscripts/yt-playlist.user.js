@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------|
 
 var css, thread, posts, container, playlist, ytPlayer, toggle, threadIds = [],
-    needsUpdate = false, isPlaying, eventBuffer = []
+    needsUpdate = false, isPlaying, errorMessage
 
 document.addEventListener("4chanXInitFinished", function() {
     // Init playlist container
@@ -56,19 +56,28 @@ document.addEventListener("4chanXInitFinished", function() {
                 'playlist': threadIds.slice(1).toString()
             },
             events: {
+                "onError": function (event) {
+                    if (event.data == 101 || event.data == 150) {
+                        errorMessage = "The owner of the requested video does not allow it to be played in embedded players."
+                    } else if (event.data == 2) {
+                        errorMessage = "The request contains an invalid parameter value."
+                    } else if (event.data == 5) {
+                        errorMessage = "The requested content cannot be played in an HTML5 player."
+                    } else if (event.data == 100) {
+                        errorMessage = "The video has been removed or marked as private."
+                    }
+                    let errorOutput = "Error - Track #" + (ytPlayer.getPlaylistIndex() + 1) + "\n" + errorMessage
+                    console.log(errorOutput)
+                    sendNotif("error", errorOutput, 10)
+                    ytPlayer.nextVideo()
+                },
                 "onStateChange": function (event) {
-                    updateBuffer(event.data)
                     // Debug events
                     // debugState(ytPlayer.getPlaylistIndex(), event.data)
-                    // Thread update condition
                     if (event.data == 1) {
                         isPlaying = true
                     } else {
                         isPlaying = false
-                    }
-                    if (event.data == -1 && isUnavailable()) {
-                        ytPlayer.nextVideo()
-                        sendNotif("warning", "I couldn't play track number " + (ytPlayer.getPlaylistIndex() + 1), 3)
                     }
                     // Recheck playlist at the end of each video
                     if (needsUpdate && event.data == 0) {
@@ -182,36 +191,20 @@ function sendNotif(type, msg, lifetime) {
     document.dispatchEvent(event)
 }
 
-function updateBuffer(newEvent) {
-    if (eventBuffer.length >= 3) {
-        eventBuffer = eventBuffer.slice(1)
-    }
-    eventBuffer.push(newEvent)
-}
-
-function isUnavailable() {
-    if (eventBuffer[0] == 3 && eventBuffer[1] == 0 && eventBuffer[2] == -1) {
-        return true
-    } else {
-        return false
-    }
-}
-
 function debugState(tracknumber, state) {
     let track = tracknumber + 1
     if (state == -1) {
-        console.log("Track #" + track + ": unstarted")
+        console.log("Track #" + track + ": [-1] unstarted")
     } else if (state == 0) {
-        console.log("---------------------------")
-        console.log("Track #" + track + ": ended")
+        console.log("Track #" + track + ": [0] ended")
     } else if (state == 1) {
-        console.log("Track #" + track + ": playing")
+        console.log("Track #" + track + ": [1] playing")
     } else if (state == 2) {
-        console.log("Track #" + track + ": paused")
+        console.log("Track #" + track + ": [2] paused")
     } else if (state == 3) {
-        console.log("Track #" + track + ": buffering")
+        console.log("Track #" + track + ": [3] buffering")
     } else if (state == 5) {
-        console.log("Track #" + track + ": video cued")
+        console.log("Track #" + track + ": [5] video cued")
     }
 }
 
