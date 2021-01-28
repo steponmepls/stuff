@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------|
 
 var css, thread, posts, container, playlist, ytPlayer, toggle, threadIds = [],
-    needsUpdate = false, isPlaying = false, isBuffering = false
+    needsUpdate = false, isPlaying, eventBuffer = []
 
 document.addEventListener("4chanXInitFinished", function() {
     // Init playlist container
@@ -44,7 +44,7 @@ document.addEventListener("4chanXInitFinished", function() {
     document.head.appendChild(api)
 
     window.onYouTubeIframeAPIReady = function() {
-        console.log("YouTube Iframe API Ready.")
+        // console.log("YouTube Iframe API Ready.")
         // Actual player init
         ytPlayer = new YT.Player('yt-player', {
             videoId: threadIds[0],
@@ -57,19 +57,16 @@ document.addEventListener("4chanXInitFinished", function() {
             },
             events: {
                 "onStateChange": function (event) {
+                    updateBuffer(event.data)
                     // Debug events
-                    // console.log(event)
+                    // debugState(ytPlayer.getPlaylistIndex(), event.data)
+                    // Thread update condition
                     if (event.data == 1) {
                         isPlaying = true
-                        isBuffering = false
                     } else {
                         isPlaying = false
                     }
-                    // Attempt to skip track if author didn't allow embed playback
-                    if (event.data == 3) {
-                        isBuffering = true
-                    }
-                    if (isBuffering && event.data == -1) { // aka from buffering to unstarted
+                    if (event.data == -1 && isUnavailable()) {
                         ytPlayer.nextVideo()
                         sendNotif("warning", "I couldn't play track number " + (ytPlayer.getPlaylistIndex() + 1), 3)
                     }
@@ -183,6 +180,39 @@ function sendNotif(type, msg, lifetime) {
         }
     })
     document.dispatchEvent(event)
+}
+
+function updateBuffer(newEvent) {
+    if (eventBuffer.length >= 3) {
+        eventBuffer = eventBuffer.slice(1)
+    }
+    eventBuffer.push(newEvent)
+}
+
+function isUnavailable() {
+    if (eventBuffer[0] == 3 && eventBuffer[1] == 0 && eventBuffer[2] == -1) {
+        return true
+    } else {
+        return false
+    }
+}
+
+function debugState(tracknumber, state) {
+    let track = tracknumber + 1
+    if (state == -1) {
+        console.log("Track #" + track + ": unstarted")
+    } else if (state == 0) {
+        console.log("---------------------------")
+        console.log("Track #" + track + ": ended")
+    } else if (state == 1) {
+        console.log("Track #" + track + ": playing")
+    } else if (state == 2) {
+        console.log("Track #" + track + ": paused")
+    } else if (state == 3) {
+        console.log("Track #" + track + ": buffering")
+    } else if (state == 5) {
+        console.log("Track #" + track + ": video cued")
+    }
 }
 
 // Styling
