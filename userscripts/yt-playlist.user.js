@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------|
 
 var css, thread, posts, container, playlist, ytPlayer, toggle, threadIds = [],
-    needsUpdate = false, isPlaying = false
+    needsUpdate = false, isPlaying = false, isBuffering = false
 
 document.addEventListener("4chanXInitFinished", function() {
     // Init playlist container
@@ -38,10 +38,10 @@ document.addEventListener("4chanXInitFinished", function() {
         }
     })
 
-   // Async API init
-   api = document.createElement('script');
-   api.src = "https://www.youtube.com/iframe_api";
-   document.head.appendChild(api)
+    // Async API init
+    api = document.createElement('script');
+    api.src = "https://www.youtube.com/iframe_api";
+    document.head.appendChild(api)
 
     window.onYouTubeIframeAPIReady = function() {
         console.log("YouTube Iframe API Ready.")
@@ -61,11 +61,20 @@ document.addEventListener("4chanXInitFinished", function() {
                     // console.log(event)
                     if (event.data == 1) {
                         isPlaying = true
+                        isBuffering = false
                     } else {
                         isPlaying = false
                     }
+                    // Attempt to skip track if author didn't allow embed playback
+                    if (event.data == 3) {
+                        isBuffering = true
+                    }
+                    if (isBuffering && event.data == -1) { // aka from buffering to unstarted
+                        ytPlayer.nextVideo()
+                        sendNotif("warning", "I couldn't play track number " + (ytPlayer.getPlaylistIndex() + 1), 3)
+                    }
                     // Recheck playlist at the end of each video
-                    if (needsUpdate && ytPlayer.getPlayerState() == 0) {
+                    if (needsUpdate && event.data == 0) {
                         let currentVideo = ytPlayer.getPlaylistIndex()
                         let currentTiming = ytPlayer.getCurrentTime()
                         ytPlayer.loadPlaylist(threadIds, currentVideo, currentTiming)
@@ -128,15 +137,7 @@ document.addEventListener("4chanXInitFinished", function() {
             container.classList.toggle("hide")
             this.classList.toggle("disabled")
         } else {
-            // Send a custom notification if no available links
-            let event = new CustomEvent("CreateNotification", {
-                "detail": {
-                    'type': 'warning',
-                    'content': 'No valid links in this thread. :c',
-                    'lifetime': 3
-                }
-            })
-            document.dispatchEvent(event)
+            sendNotif("warning", "No valid links in this thread. :c", 3)
         }
     }
 })
@@ -171,6 +172,17 @@ function removeIds(post) {
             needsUpdate = true
         }
     })
+}
+
+function sendNotif(type, msg, lifetime) {
+    let event = new CustomEvent("CreateNotification", {
+        "detail": {
+            'type': type, // required !! can be 'info', 'success', 'warning', or 'error'
+            'content': msg, // required !! must be a string
+            'lifetime': lifetime // optional .. time in seconds till it disappears
+        }
+    })
+    document.dispatchEvent(event)
 }
 
 // Styling
