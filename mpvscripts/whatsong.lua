@@ -10,10 +10,9 @@ function fetchTitle()
 		local function starts_with(str, start)
 			return str:sub(1, #start) == start
 		end
-		if not (starts_with(path, "http")) then
-			path = ""
+		if (starts_with(path, "http")) then
+			copyTitle(title, path)
 		end
-		copyTitle(title, path)
 	else
 		mp.osd_message("Error: coudln't copy title to clipboard")
 	end
