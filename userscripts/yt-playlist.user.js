@@ -43,11 +43,8 @@
                 });
             };
             // Apply changes to playlist
-            if (needsUpdate && !isPlaying) { // if not playing
-                let currentVideo = ytPlayer.getPlaylistIndex();
-                let currentTiming = ytPlayer.getCurrentTime();
-                ytPlayer.cuePlaylist(threadIds, currentVideo, currentTiming);
-                needsUpdate = false; // Reset mutation checker
+            if (needsUpdate) {
+                stateMutation(ytPlayer.getPlayerState());
             };
         });
         // Init YouTube Iframe API
@@ -60,8 +57,12 @@
         // Move iframe in the top right corner
         playlist.style.top = (document.querySelector("#header-bar").offsetHeight + 5) + "px";
         playlist.style.right = "5px";
-        // Wait for init event
+        // Wait for API
         window.onYouTubeIframeAPIReady = function() {
+            // Skip first round of load/cue in stateMutation() so
+            // playlist doesn't load twice on first time
+            if (!ytPlayer) {needsUpdate = false};
+            // Actually init the playlist player
             ytPlayer = new YT.Player('ytplaylist', {
                 width: '512',
                 height: '288',
@@ -122,7 +123,7 @@
                     threadIds.push(id);
                     needsUpdate = true;
                 } else {
-                    if (isDead === true) {
+                    if (isDead) {
                         threadIds.pop(id);
                         needsUpdate = true;
                     }
@@ -156,12 +157,29 @@
     function stateMutation(e) {
         // debug
         // debugState(e.target.getPlaylistIndex(), e.data);
-        if (e.data == 1) {isPlaying = true} else {isPlaying = false};
-        if (needsUpdate && e.data == 0) { // Refresh playlist at the end of each video
-            let currentVideo = e.target.getPlaylistIndex();
-            let currentTiming = e.target.getCurrentTime();
-            e.target.loadPlaylist(threadIds, currentVideo, currentTiming);
-            needsUpdate = false; // Reset mutation checker
+        // Distinguish between..
+        var event, player;
+        if (typeof e !== "number") { // ..event call..
+            event = e.data;
+            player = e.target;
+        } else { // ..and manual call
+            event = e;
+            player = ytPlayer;
+        }
+        if (event == 1) {
+            isPlaying = true;
+        } else {
+            if (needsUpdate) {
+                let currentVideo = player.getPlaylistIndex();
+                let currentTiming = player.getCurrentTime();
+                if (isPlaying) {
+                    player.loadPlaylist(threadIds, currentVideo, currentTiming);
+                } else {
+                    player.cuePlaylist(threadIds, currentVideo, currentTiming);
+                };
+                needsUpdate = false;
+            };
+            isPlaying = false;
         };
     };
 
