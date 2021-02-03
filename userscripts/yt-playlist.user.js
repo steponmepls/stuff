@@ -16,7 +16,7 @@
 // -----------------------------------------------------------------|
 
 (function () {
-    var ytPlayer, threadIds = [], needsUpdate = false, isPlaying = false;
+    var ytPlayer, threadIds = [], needsUpdate = false, wasPlaying = false;
     document.addEventListener("4chanXInitFinished", function() {
         const thread = document.querySelector(".board .thread");
         let posts = thread.querySelectorAll(".postContainer");
@@ -44,6 +44,7 @@
             };
             // Apply changes to playlist
             if (needsUpdate) {
+                sendNotif("info", (threadIds.length - ytPlayer.getPlaylist().length) + " new IDs available.", 10);
                 stateMutation(ytPlayer.getPlayerState());
             };
         });
@@ -127,9 +128,9 @@
                         threadIds.pop(id);
                         needsUpdate = true;
                     }
-                };
+                }
             });
-        };
+        }
     };
 
     function showError(e) {
@@ -167,19 +168,26 @@
             player = ytPlayer;
         }
         if (event == 1) {
-            isPlaying = true;
+            wasPlaying = true;
         } else {
             if (needsUpdate) {
+                console.debug("State before playlist change attempt: " + event);
                 let currentVideo = player.getPlaylistIndex();
                 let currentTiming = player.getCurrentTime();
-                if (isPlaying) {
+                if (event == 0 && wasPlaying) {
                     player.loadPlaylist(threadIds, currentVideo, currentTiming);
-                } else {
+                } else if (!wasPlaying) {
                     player.cuePlaylist(threadIds, currentVideo, currentTiming);
-                };
+                }
                 needsUpdate = false;
             };
-            isPlaying = false;
+            if (event == 0) {
+                wasPlaying = false;
+            };
+            //if (threadIds.length != player.getPlaylist().length) {
+                //console.debug("Array mismatch even if needsUpdate === true.\nArray length: " + 
+                //                threadIds.length + "\nPlaylist length: " + player.getPlaylist().length)
+            //};
         };
     };
 
