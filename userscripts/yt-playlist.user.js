@@ -16,13 +16,11 @@
 // -----------------------------------------------------------------|
 
 (function () {
-    var ytPlayer, threadIds = [], needsUpdate = false, wasPlaying = false;
+    var ytPlaylist, threadIds = [], needsUpdate = false, isPlaying = false, wasPlaying = false;
     document.addEventListener("4chanXInitFinished", function() {
         const thread = document.querySelector(".board .thread");
         let posts = thread.querySelectorAll(".postContainer");
-        // Init playlist
-        posts.forEach(post => {checkPlaylist(post)});
-        // Check playlist when thread updates
+        posts.forEach(post => compareIds(post));
         document.addEventListener("ThreadUpdate", function(e) {
             // If thread update contains new posts
             if (e.detail.newPosts.length > 0) {
@@ -30,7 +28,7 @@
                 newPosts.forEach(postId => {
                     let fullId = "[data-full-i-d='" + postId + "']";
                     let post = thread.querySelector(".postContainer" + fullId);
-                    checkPlaylist(post);
+                    compareIds(post);
                 });
             };
             // If thread update contains deleted posts
@@ -39,14 +37,11 @@
                 deletedPosts.forEach(postId => {
                     let fullId = "[data-full-i-d='" + postId + "']";
                     let post = thread.querySelector(".postContainer" + fullId);
-                    checkPlaylist(post, (e.detail.deletedPosts.length > 0));
+                    compareIds(post, (e.detail.deletedPosts.length > 0));
                 });
             };
-            // Apply changes to playlist
-            if (needsUpdate) {
-                sendNotif("info", (threadIds.length - ytPlayer.getPlaylist().length) + " new IDs available.", 10);
-                stateMutation(ytPlayer.getPlayerState());
-            };
+            // Check for changes to playlist
+            checkPlaylist();
         });
         // Init YouTube Iframe API
         let script = document.createElement("script");
@@ -60,11 +55,8 @@
         playlist.style.right = "5px";
         // Wait for API
         window.onYouTubeIframeAPIReady = function() {
-            // Skip first round of load/cue in stateMutation() so
-            // playlist doesn't load twice on first time
-            if (!ytPlayer) {needsUpdate = false};
-            // Actually init the playlist player
-            ytPlayer = new YT.Player('ytplaylist', {
+            if (!ytPlaylist) {needsUpdate = false};
+            ytPlaylist = new YT.Player('ytplaylist', {
                 width: '512',
                 height: '288',
                 playerVars: {
@@ -74,8 +66,39 @@
                     'playlist': threadIds.toString()
                 },
                 events: {
-                    "onError": function(e) {showError (e)},
-                    "onStateChange": function(e) {stateMutation(e)}
+                    "onError": function(e) {
+                        var errMsg, errLvl;
+                        if (e.data == 101 || e.data == 150) {
+                            errLvl = "warning";
+                            errMsg = "The owner of the requested video does not allow it to be played in embedded players.";
+                        } else if (e.data == 2) {
+                            errLvl = "error";
+                            errMsg = "The request contains an invalid parameter value.";
+                        } else if (e.data == 2) {
+                            errLvl = "error";
+                            errMsg = "The requested content cannot be played in an HTML5 player.";
+                        } else if (e.data == 2) {
+                            errLvl = "warning";
+                            errMsg = "The video has been removed or marked as private.";
+                        };
+                        let index = e.target.getPlaylistIndex() + 1;
+                        let output = "Error - Video #" + index + "\n" + errMsg;
+                        console.warn(output);
+                        sendNotif(errLvl, output, 10);
+                        e.target.nextVideo();
+                    },
+                    "onStateChange": function(e) {
+                        if (e.data == 1) {
+                            isPlaying = true
+                        } else {
+                            if (isPlaying) {wasPlaying = true};
+                            isPlaying = false;
+                            if (e.data == 0) {
+                                wasPlaying = false
+                            };
+                        };
+                        checkPlaylist(e.data);
+                    }
                 }
             });
         };
@@ -114,108 +137,48 @@
         `;
     });
 
-    function checkPlaylist(post, isDead) {
+    // Functions
+    function compareIds(post, isDead) {
         if (post.querySelector("a.linkify.youtube")) {
             let postIds = [];
             let postLinks = post.querySelectorAll("a.linkify.youtube + a.embedder");
             postLinks.forEach(link => postIds.push(link.getAttribute("data-uid")));
             postIds.forEach(id => {
                 if (!threadIds.includes(id)) {
+                    if (!needsUpdate) {needsUpdate = true};
                     threadIds.push(id);
-                    needsUpdate = true;
                 } else {
                     if (isDead) {
+                        if (!needsUpdate) {needsUpdate = true};
                         threadIds.pop(id);
-                        needsUpdate = true;
                     }
                 }
             });
         }
     };
 
-    function showError(e) {
-        var errMsg, errLvl;
-        if (e.data == 101 || e.data == 150) {
-            errLvl = "warning";
-            errMsg = "The owner of the requested video does not allow it to be played in embedded players.";
-        } else if (e.data == 2) {
-            errLvl = "error";
-            errMsg = "The request contains an invalid parameter value.";
-        } else if (e.data == 2) {
-            errLvl = "error";
-            errMsg = "The requested content cannot be played in an HTML5 player.";
-        } else if (e.data == 2) {
-            errLvl = "warning";
-            errMsg = "The video has been removed or marked as private.";
-        };
-        let index = e.target.getPlaylistIndex() + 1;
-        let output = "Error - Video #" + index + "\n" + errMsg;
-        console.warn(output);
-        sendNotif(errLvl, output, 10);
-        e.target.nextVideo();
-    };
-
-    function stateMutation(e) {
-        // debug
-        // debugState(e.target.getPlaylistIndex(), e.data);
-        // Distinguish between..
-        var event, player;
-        if (typeof e !== "number") { // ..event call..
-            event = e.data;
-            player = e.target;
-        } else { // ..and manual call
-            event = e;
-            player = ytPlayer;
+    function checkPlaylist(state) {
+        if (!state) {var state = ytPlaylist.getPlayerState()};
+        if (!isPlaying && needsUpdate) {
+            let currentVideo = ytPlaylist.getPlaylistIndex();
+            let currentTiming = ytPlaylist.getCurrentTime();
+            if (wasPlaying && state == 0) {
+                ytPlaylist.loadPlaylist(threadIds, currentVideo, currentTiming);
+            } else {
+                ytPlaylist.cuePlaylist(threadIds, currentVideo, currentTiming);
+            }
+            needsUpdate = false;
         }
-        if (event == 1) {
-            wasPlaying = true;
-        } else {
-            if (needsUpdate) {
-                console.debug("State before playlist change attempt: " + event);
-                let currentVideo = player.getPlaylistIndex();
-                let currentTiming = player.getCurrentTime();
-                if (event == 0 && wasPlaying) {
-                    player.loadPlaylist(threadIds, currentVideo, currentTiming);
-                } else if (!wasPlaying) {
-                    player.cuePlaylist(threadIds, currentVideo, currentTiming);
-                }
-                needsUpdate = false;
-            };
-            if (event == 0) {
-                wasPlaying = false;
-            };
-            //if (threadIds.length != player.getPlaylist().length) {
-                //console.debug("Array mismatch even if needsUpdate === true.\nArray length: " + 
-                //                threadIds.length + "\nPlaylist length: " + player.getPlaylist().length)
-            //};
-        };
     };
 
     function sendNotif(type, msg, lifetime) {
         let event = new CustomEvent("CreateNotification", {
             "detail": {
-                'type': type, // required !! can be 'info', 'success', 'warning', or 'error'
-                'content': msg, // required !! must be a string
-                'lifetime': lifetime // optional .. time in seconds till it disappears
+                'type': type, // 'info', 'success', 'warning', or 'error'
+                'content': msg, // string
+                'lifetime': lifetime // optional - time in seconds till it disappears
             }
         });
         document.dispatchEvent(event);
-    };
-    
-    function debugState(tracknumber, state) {
-        let track = tracknumber + 1;
-        if (state == -1) {
-            console.debug("Track #" + track + ": [-1] unstarted");
-        } else if (state == 0) {
-            console.debug("Track #" + track + ": [0] ended");
-        } else if (state == 1) {
-            console.debug("Track #" + track + ": [1] playing");
-        } else if (state == 2) {
-            console.debug("Track #" + track + ": [2] paused");
-        } else if (state == 3) {
-            console.debug("Track #" + track + ": [3] buffering");
-        } else if (state == 5) {
-            console.debug("Track #" + track + ": [5] video cued");
-        };
     };
 })();
