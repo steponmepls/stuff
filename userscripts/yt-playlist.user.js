@@ -16,12 +16,13 @@
 // -----------------------------------------------------------------|
 
 (function () {
-    var ytPlaylist, threadIds = [], needsUpdate = false, isPlaying = false, wasPlaying = false;
+    var ytPlaylist, threadIds = [], needsUpdate = false, isPlaying = false;
     document.addEventListener("4chanXInitFinished", function() {
         const thread = document.querySelector(".board .thread");
         let posts = thread.querySelectorAll(".postContainer");
         posts.forEach(post => compareIds(post));
         document.addEventListener("ThreadUpdate", function(e) {
+            //console.debug(ytPlaylist);
             // If thread update contains new posts
             if (e.detail.newPosts.length > 0) {
                 let newPosts = e.detail.newPosts;
@@ -88,16 +89,14 @@
                         e.target.nextVideo();
                     },
                     "onStateChange": function(e) {
+                        // -1 unstarted; 0 ended; 1 playing; 2 paused; 3 buffering; 5 video cued
+                        // console.debug("#" + (e.target.getPlaylistIndex() + 1) + " [" + e.data + "]");
                         if (e.data == 1) {
                             isPlaying = true
                         } else {
-                            if (isPlaying) {wasPlaying = true};
-                            isPlaying = false;
-                            if (e.data == 0) {
-                                wasPlaying = false
-                            };
+                            if (needsUpdate && isPlaying) {checkPlaylist(e.data)};
+                            if (e.data != 3) {isPlaying = false};
                         };
-                        checkPlaylist(e.data);
                     }
                 }
             });
@@ -158,15 +157,14 @@
     };
 
     function checkPlaylist(state) {
-        if (!state) {var state = ytPlaylist.getPlayerState()};
-        if (!isPlaying && needsUpdate) {
+        if (ytPlaylist) {
             let currentVideo = ytPlaylist.getPlaylistIndex();
             let currentTiming = ytPlaylist.getCurrentTime();
-            if (wasPlaying && state == 0) {
+            if (isPlaying && state == 0) {
                 ytPlaylist.loadPlaylist(threadIds, currentVideo, currentTiming);
             } else {
                 ytPlaylist.cuePlaylist(threadIds, currentVideo, currentTiming);
-            }
+            };
             needsUpdate = false;
         }
     };
