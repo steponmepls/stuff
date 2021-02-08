@@ -16,8 +16,15 @@
 // -----------------------------------------------------------------|
 
 (function () {
+    console.debug("Is this script even running?");
     var ytPlaylist, threadIds = [], needsUpdate = false, isPlaying = false;
-    document.addEventListener("4chanXInitFinished", function() {
+    document.addEventListener("4chanXInitFinished", initPlaylist());
+
+    // Functions
+    // Had to move most of the script in its own function because
+    // 4chanXInitFinished failed to fire for some stupid reason??
+    function initPlaylist() {
+        console.debug("4Chan X API Init");
         const thread = document.querySelector(".board .thread");
         let posts = thread.querySelectorAll(".postContainer");
         posts.forEach(post => compareIds(post));
@@ -134,9 +141,8 @@
             }
             #ytplaylist.show {display: initial;}
         `;
-    });
+    }
 
-    // Functions
     function compareIds(post, isDead) {
         if (post.querySelector("a.linkify.youtube")) {
             let postIds = [];
@@ -166,6 +172,8 @@
                 ytPlaylist.cuePlaylist(threadIds, currentVideo, currentTiming);
             };
             needsUpdate = false;
+        } else {
+            console.debug("No player available for some reason?");
         }
     };
 
