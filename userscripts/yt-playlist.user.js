@@ -3,6 +3,7 @@
 // @description Wraps all YouTube links within a thread into an embedded playlist
 // @include https://boards.4channel.org/jp/thread/*
 // @grant none
+// @run-at document-start
 // ==/UserScript==
 
 // -----------------[Add the following exceptions]------------------|
@@ -16,20 +17,14 @@
 // -----------------------------------------------------------------|
 
 (function () {
-    console.debug("Is this script even running?");
     var ytPlaylist, threadIds = [], needsUpdate = false, isPlaying = false;
-    document.addEventListener("4chanXInitFinished", initPlaylist());
-
-    // Functions
-    // Had to move most of the script in its own function because
-    // 4chanXInitFinished failed to fire for some stupid reason??
-    function initPlaylist() {
-        console.debug("4Chan X API Init");
-        const thread = document.querySelector(".board .thread");
+    document.addEventListener("4chanXInitFinished", function() {
+        let thread = document.querySelector(".board .thread");
         let posts = thread.querySelectorAll(".postContainer");
         posts.forEach(post => compareIds(post));
+
+        // Check for new ids on thread update
         document.addEventListener("ThreadUpdate", function(e) {
-            //console.debug(ytPlaylist);
             // If thread update contains new posts
             if (e.detail.newPosts.length > 0) {
                 let newPosts = e.detail.newPosts;
@@ -49,8 +44,9 @@
                 });
             };
             // Check for changes to playlist
-            checkPlaylist();
+            if (needsUpdate && !isPlaying) {checkPlaylist()};
         });
+
         // Init YouTube Iframe API
         let script = document.createElement("script");
         script.src = "https://www.youtube.com/iframe_api";
@@ -61,6 +57,7 @@
         // Move iframe in the top right corner
         playlist.style.top = (document.querySelector("#header-bar").offsetHeight + 5) + "px";
         playlist.style.right = "5px";
+
         // Wait for API
         window.onYouTubeIframeAPIReady = function() {
             if (!ytPlaylist) {needsUpdate = false};
@@ -101,13 +98,14 @@
                         if (e.data == 1) {
                             isPlaying = true
                         } else {
-                            if (needsUpdate && isPlaying) {checkPlaylist(e.data)};
+                            if (needsUpdate) {checkPlaylist(e.data)};
                             if (e.data != 3) {isPlaying = false};
                         };
                     }
                 }
             });
         };
+
         // Toggle in top bar
         let toggle = document.createElement("span");
         toggle.id = "shortcut-youtube";
@@ -130,6 +128,7 @@
                 sendNotif("warning", "No valid links in this thread. :c", 3);
             };
         };
+
         // Styling
         let css = document.createElement("style");
         document.head.appendChild(css);
@@ -141,8 +140,9 @@
             }
             #ytplaylist.show {display: initial;}
         `;
-    }
+    });
 
+    // Functions
     function compareIds(post, isDead) {
         if (post.querySelector("a.linkify.youtube")) {
             let postIds = [];
@@ -167,8 +167,10 @@
             let currentVideo = ytPlaylist.getPlaylistIndex();
             let currentTiming = ytPlaylist.getCurrentTime();
             if (isPlaying && state == 0) {
+                console.debug("loadPlaylist()");
                 ytPlaylist.loadPlaylist(threadIds, currentVideo, currentTiming);
-            } else {
+            } else if (!isPlaying) {
+                console.debug("cuePlaylist()");
                 ytPlaylist.cuePlaylist(threadIds, currentVideo, currentTiming);
             };
             needsUpdate = false;
