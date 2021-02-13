@@ -40,7 +40,7 @@
                 deletedIds.forEach(postId => {
                     let fullId = "[data-full-i-d='" + postId + "']";
                     let post = thread.querySelector(".postContainer" + fullId);
-                    compareIds(post, deletedIds, postId);
+                    compareIds(post, e.detail.deletedPosts.length > 0);
                 });
             };
             // Check for changes to playlist
@@ -143,7 +143,7 @@
     });
 
     // Functions
-    function compareIds(post, array, item) {
+    function compareIds(post, isDead) {
         if (post.querySelector("a.linkify.youtube")) {
             let postIds = [];
             let postLinks = post.querySelectorAll("a.linkify.youtube + a.embedder");
@@ -153,7 +153,7 @@
                     if (!needsUpdate) {needsUpdate = true};
                     threadIds.push(id);
                 } else {
-                    if (array && item && array.includes(item)) {
+                    if (isDead) {
                         if (!needsUpdate) {needsUpdate = true};
                         threadIds.pop(id);
                     }
