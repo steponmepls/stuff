@@ -27,8 +27,8 @@
         document.addEventListener("ThreadUpdate", function(e) {
             // If thread update contains new posts
             if (e.detail.newPosts.length > 0) {
-                let newPosts = e.detail.newPosts;
-                newPosts.forEach(postId => {
+                let newIds = e.detail.newPosts;
+                newIds.forEach(postId => {
                     let fullId = "[data-full-i-d='" + postId + "']";
                     let post = thread.querySelector(".postContainer" + fullId);
                     compareIds(post);
@@ -36,11 +36,11 @@
             };
             // If thread update contains deleted posts
             if (e.detail.deletedPosts.length > 0) {
-                let deletedPosts = e.detail.deletedPosts;
-                deletedPosts.forEach(postId => {
+                let deletedIds = e.detail.deletedPosts;
+                deletedIds.forEach(postId => {
                     let fullId = "[data-full-i-d='" + postId + "']";
                     let post = thread.querySelector(".postContainer" + fullId);
-                    compareIds(post, (e.detail.deletedPosts.length > 0));
+                    compareIds(post, deletedIds, postId);
                 });
             };
             // Check for changes to playlist
@@ -143,7 +143,7 @@
     });
 
     // Functions
-    function compareIds(post, isDead) {
+    function compareIds(post, array, item) {
         if (post.querySelector("a.linkify.youtube")) {
             let postIds = [];
             let postLinks = post.querySelectorAll("a.linkify.youtube + a.embedder");
@@ -153,7 +153,7 @@
                     if (!needsUpdate) {needsUpdate = true};
                     threadIds.push(id);
                 } else {
-                    if (isDead) {
+                    if (array && item && array.includes(item)) {
                         if (!needsUpdate) {needsUpdate = true};
                         threadIds.pop(id);
                     }
