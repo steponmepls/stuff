@@ -14,20 +14,24 @@ mp.register_event('file-loaded', function()
 	local container_fps = mp.get_property_number('container-fps')
 	local file_format = mp.get_property('video-format')
 	-- check if still image but
-	if (container_fps == 1 or container_fps == nil)
+	if ((container_fps == 1 or container_fps == nil)
 	-- also consider animated webm/gif
-	or (file_format == 'vp8' or file_format == 'vp9' or file_format == 'gif')
-	--  without audio
+	or (file_format == 'vp8' or file_format == 'vp9' or file_format == 'gif'))
+	--  all the three of them without audio (still, webm and gif)
 	and not mp.get_property('audio-codec') then
 		if (was_image == false or was_image == nil) then
+			mp.command('apply-profile image')
 			mp.command('enable-section image')
 			was_image = true
 		else
 			reset_filters()
 		end
-	elseif (was_image == true) then
-		reset_filters()
-		mp.command('disable-section image')
-		was_image = false
+	else
+		if (was_image == true) then
+			reset_filters()
+			mp.command('apply-profile image restore')
+			mp.command('disable-section image')
+			was_image = false
+		end
 	end
 end)
