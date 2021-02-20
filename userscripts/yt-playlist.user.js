@@ -16,35 +16,33 @@
 // @@||www.youtube.com/s/player/*$script,domain=4channel.org        |
 // -----------------------------------------------------------------|
 
-(function () {
-    var ytPlaylist, threadIds = [], needsUpdate = false, isPlaying = false;
+(function() {
+    var ytPlayer, threadIds = [], needsUpdate = false, isPlaying = false;
+
     document.addEventListener("4chanXInitFinished", function() {
         let thread = document.querySelector(".board .thread");
         let posts = thread.querySelectorAll(".postContainer");
-        posts.forEach(post => compareIds(post));
+        posts.forEach(post => fetchIds(post));
 
         // Check for new ids on thread update
         document.addEventListener("ThreadUpdate", function(e) {
-            // If thread update contains new posts
-            if (e.detail.newPosts.length > 0) {
-                let newIds = e.detail.newPosts;
-                newIds.forEach(postId => {
+            if (e.detail.newPosts.length > 0) { // New posts
+                let newPosts = e.detail.newPosts;
+                newPosts.forEach(postId => {
                     let fullId = "[data-full-i-d='" + postId + "']";
                     let post = thread.querySelector(".postContainer" + fullId);
-                    compareIds(post);
+                    fetchIds(post);
                 });
             };
-            // If thread update contains deleted posts
-            if (e.detail.deletedPosts.length > 0) {
-                let deletedIds = e.detail.deletedPosts;
-                deletedIds.forEach(postId => {
+            if (e.detail.deletedPosts.length > 0) { // Deleted posts
+                let delPosts = e.detail.deletedPosts;
+                delPosts.forEach(postId => {
                     let fullId = "[data-full-i-d='" + postId + "']";
                     let post = thread.querySelector(".postContainer" + fullId);
-                    compareIds(post, e.detail.deletedPosts.length > 0);
+                    fetchIds(post, e.detail.deletedPosts.length > 0);
                 });
             };
-            // Check for changes to playlist
-            if (needsUpdate && !isPlaying) {checkPlaylist()};
+            if (!isPlaying && needsUpdate) {updatePlaylist()};
         });
 
         // Init YouTube Iframe API
@@ -54,14 +52,12 @@
         let playlist = document.createElement("div");
         playlist.id = "ytplaylist";
         document.body.appendChild(playlist);
-        // Move iframe in the top right corner
         playlist.style.top = (document.querySelector("#header-bar").offsetHeight + 5) + "px";
         playlist.style.right = "5px";
 
-        // Wait for API
         window.onYouTubeIframeAPIReady = function() {
-            if (!ytPlaylist) {needsUpdate = false};
-            ytPlaylist = new YT.Player('ytplaylist', {
+            if (!ytPlayer) {needsUpdate = false};
+            ytPlayer = new YT.Player('ytplaylist', {
                 width: '512',
                 height: '288',
                 playerVars: {
@@ -95,17 +91,13 @@
                     "onStateChange": function(e) {
                         // -1 unstarted; 0 ended; 1 playing; 2 paused; 3 buffering; 5 video cued
                         // console.debug("#" + (e.target.getPlaylistIndex() + 1) + " [" + e.data + "]");
-                        if (e.data == 1) {
-                            isPlaying = true
-                        } else {
-                            if (needsUpdate) {checkPlaylist(e.data)};
-                            if (e.data != 3) {isPlaying = false};
-                        };
+                        if (e.data == 0 && needsUpdate) {updatePlaylist()};
+                        if (e.data == 1 || e.data == 3) {isPlaying = true} else {isPlaying = false};
                     }
                 }
             });
         };
-
+    
         // Toggle in top bar
         let toggle = document.createElement("span");
         toggle.id = "shortcut-youtube";
@@ -128,7 +120,7 @@
                 sendNotif("warning", "No valid links in this thread. :c", 3);
             };
         };
-
+    
         // Styling
         let css = document.createElement("style");
         document.head.appendChild(css);
@@ -143,7 +135,7 @@
     });
 
     // Functions
-    function compareIds(post, isDead) {
+    function fetchIds(post, isDead) {
         if (post.querySelector("a.linkify.youtube")) {
             let postIds = [];
             let postLinks = post.querySelectorAll("a.linkify.youtube + a.embedder");
@@ -153,7 +145,7 @@
                     if (!needsUpdate) {needsUpdate = true};
                     threadIds.push(id);
                 } else {
-                    if (isDead) {
+                    if (isDead === true) {
                         if (!needsUpdate) {needsUpdate = true};
                         threadIds.pop(id);
                     }
@@ -162,23 +154,21 @@
         }
     };
 
-    function checkPlaylist(state) {
-        if (ytPlaylist) {
-            let currentVideo = ytPlaylist.getPlaylistIndex();
-            let currentTiming = ytPlaylist.getCurrentTime();
-            if (isPlaying && state == 0) {
-                console.debug("loadPlaylist()");
-                ytPlaylist.loadPlaylist(threadIds, currentVideo, currentTiming);
-            } else if (!isPlaying) {
-                console.debug("cuePlaylist()");
-                ytPlaylist.cuePlaylist(threadIds, currentVideo, currentTiming);
+    function updatePlaylist() {
+        if (ytPlayer) {
+            let currentVideo = ytPlayer.getPlaylistIndex();
+            let currentTiming = ytPlayer.getCurrentTime();
+            if (isPlaying) {
+                ytPlayer.loadPlaylist(threadIds, currentVideo, currentTiming);
+            } else {
+                ytPlayer.cuePlaylist(threadIds, currentVideo, currentTiming);
             };
             needsUpdate = false;
         } else {
             console.debug("No player available for some reason?");
         }
     };
-
+    
     function sendNotif(type, msg, lifetime) {
         let event = new CustomEvent("CreateNotification", {
             "detail": {
