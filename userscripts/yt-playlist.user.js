@@ -43,7 +43,7 @@
                     fetchIds(post, e.detail.deletedPosts.length > 0);
                 });
             };
-            if (needsUpdate) {updatePlaylist()};
+            if (!isPlaying && needsUpdate) {updatePlaylist()};
         });
 
         // Init YouTube Iframe API
@@ -92,7 +92,7 @@
                     "onStateChange": function(e) {
                         // -1 unstarted; 0 ended; 1 playing; 2 paused; 3 buffering; 5 video cued
                         // console.debug("#" + (e.target.getPlaylistIndex() + 1) + " [" + e.data + "]");
-                        if (e.data == 0 && needsUpdate) {updatePlaylist(e.data)};
+                        if (e.data == 0 && needsUpdate) {updatePlaylist()};
                         if (e.data == 1 || e.data == 3) {isPlaying = true} else {isPlaying = false};
                     }
                 }
@@ -157,11 +157,13 @@
 
     function updatePlaylist(state) {
         let index = ytPlayer.getPlaylistIndex();
+        let cTime = ytPlayer.getCurrentTime();
         if (isPlaying && state == 0) {
-            ytPlayer.loadPlaylist(threadIds, index);
+            ytPlayer.loadPlaylist();
+            setTimeout(function(){ ytPlayer.loadPlaylist(threadIds, index) }, 500);
         } else {
-            let cTime = ytPlayer.getCurrentTime();
-            ytPlayer.cuePlaylist(threadIds, index, cTime);
+            ytPlayer.cuePlaylist();
+            setTimeout(function(){ ytPlayer.cuePlaylist(threadIds, index, cTime) }, 500);
         };
         needsUpdate = false;
     };
