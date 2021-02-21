@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name 4chanX YouTube Playlists for /jp/ - beta
+// @name 4chanX YouTube Playlists for /jp/
 // @description Wraps all YouTube links within a thread into an embedded playlist
 // @include https://boards.4channel.org/jp/thread/*
 // @grant none
