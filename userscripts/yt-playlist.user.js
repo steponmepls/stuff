@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name 4chanX YouTube Playlists for /jp/
+// @name 4chanX YouTube Playlists for /jp/ - beta
 // @description Wraps all YouTube links within a thread into an embedded playlist
 // @include https://boards.4channel.org/jp/thread/*
 // @grant none
@@ -17,6 +17,7 @@
 // -----------------------------------------------------------------|
 
 (function() {
+    'use strict';
     var ytPlayer, threadIds = [], needsUpdate = false, isPlaying = false;
 
     document.addEventListener("4chanXInitFinished", function() {
@@ -42,7 +43,7 @@
                     fetchIds(post, e.detail.deletedPosts.length > 0);
                 });
             };
-            if (!isPlaying && needsUpdate) {updatePlaylist()};
+            if (needsUpdate) {updatePlaylist()};
         });
 
         // Init YouTube Iframe API
@@ -91,13 +92,13 @@
                     "onStateChange": function(e) {
                         // -1 unstarted; 0 ended; 1 playing; 2 paused; 3 buffering; 5 video cued
                         // console.debug("#" + (e.target.getPlaylistIndex() + 1) + " [" + e.data + "]");
-                        if (e.data == 0 && needsUpdate) {updatePlaylist()};
+                        if (e.data == 0 && needsUpdate) {updatePlaylist(e.data)};
                         if (e.data == 1 || e.data == 3) {isPlaying = true} else {isPlaying = false};
                     }
                 }
             });
         };
-    
+
         // Toggle in top bar
         let toggle = document.createElement("span");
         toggle.id = "shortcut-youtube";
@@ -117,10 +118,10 @@
                 container.classList.toggle("show");
                 this.classList.toggle("disabled");
             } else {
-                sendNotif("warning", "No valid links in this thread. :c", 3);
+                sendNotif("warning", "No valid links in this thread. :c", 3)
             };
         };
-    
+
         // Styling
         let css = document.createElement("style");
         document.head.appendChild(css);
@@ -154,21 +155,17 @@
         }
     };
 
-    function updatePlaylist() {
-        if (ytPlayer) {
-            let currentVideo = ytPlayer.getPlaylistIndex();
-            let currentTiming = ytPlayer.getCurrentTime();
-            if (isPlaying) {
-                ytPlayer.loadPlaylist(threadIds, currentVideo, currentTiming);
-            } else {
-                ytPlayer.cuePlaylist(threadIds, currentVideo, currentTiming);
-            };
-            needsUpdate = false;
+    function updatePlaylist(state) {
+        let index = ytPlayer.getPlaylistIndex();
+        if (isPlaying && state == 0) {
+            ytPlayer.loadPlaylist(threadIds, index);
         } else {
-            console.debug("No player available for some reason?");
-        }
+            let cTime = ytPlayer.getCurrentTime();
+            ytPlayer.cuePlaylist(threadIds, index, cTime);
+        };
+        needsUpdate = false;
     };
-    
+
     function sendNotif(type, msg, lifetime) {
         let event = new CustomEvent("CreateNotification", {
             "detail": {
