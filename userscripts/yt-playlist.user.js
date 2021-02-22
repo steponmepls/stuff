@@ -53,19 +53,12 @@
         // For some reason waitinf for init isn't enough for it to generate
         var observer = new MutationObserver(function (mutations, me) {
             var embedding = document.querySelector("#media-embed");
-            if (embedding) {
-                console.debug(embedding);
-                embedding.appendChild(playlist);
-                me.disconnect();
-                return;
-            }
+            if (embedding) {embedding.appendChild(playlist); me.disconnect(); return};
         });
         let playlist = document.createElement("div");
         playlist.id = "ytplaylist";
         // Start observing after playlist has been created
         observer.observe(document, {childList: true, subtree: true});
-        playlist.style.top = (document.querySelector("#header-bar").offsetHeight + 5) + "px";
-        playlist.style.right = "5px";
 
         window.onYouTubeIframeAPIReady = function() {
             if (!ytPlayer) {needsUpdate = false};
@@ -123,15 +116,7 @@
         `;
         let qr = document.querySelector("#header-bar #shortcuts #shortcut-qr");
         qr.parentNode.insertBefore(toggle, qr);
-        toggle.querySelector("a").onclick = function () {
-            if (threadIds.length > 0) {
-                let container = document.querySelector("#embedding");
-                container.classList.toggle("empty");
-                this.classList.toggle("disabled");
-            } else {
-                sendNotif("warning", "No valid links in this thread. :c", 3)
-            };
-        };
+        toggle.querySelector("a").onclick = function () {togglePlaylist()};
 
         // Styling
         let css = document.createElement("style");
@@ -164,6 +149,29 @@
                 }
             });
         }
+    };
+
+    function togglePlaylist() {
+        if (threadIds.length > 0) {
+            if (ytPlayer){
+                let container = document.querySelector("#embedding");
+                container.classList.toggle("empty");
+                this.classList.toggle("disabled");
+            } else {
+                sendNotif("error", "Unable to load YouTube Iframe API.\nPress F12 and check for errors in the console.");
+                console.error("Unable to load YouTube Iframe API.\n" +
+                "Remember to add the following exceptions:\n" +
+                "4chanX's Settings > Advanced > Javascript Whitelist\n" +
+                "- https://www.youtube.com/iframe_api\n" +
+                "- https://www.youtube.com/s/player/\n" +
+                "Filters in your AdBlock extension\n" +
+                "- @@||www.youtube.com/iframe_api$script,domain=4channel.org\n" +
+                "- @@||www.youtube.com/s/player/*$script,domain=4channel.org\n"
+                );
+            }
+        } else {
+            sendNotif("warning", "No valid links in this thread. :c", 3)
+        };
     };
 
     function updatePlaylist(state) {
