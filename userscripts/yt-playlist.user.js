@@ -43,16 +43,27 @@
                     fetchIds(post, e.detail.deletedPosts.length > 0);
                 });
             };
-            if (!isPlaying && needsUpdate) {updatePlaylist()};
+            if (ytPlayer && !isPlaying && needsUpdate) {updatePlaylist()};
         });
 
         // Init YouTube Iframe API
         let script = document.createElement("script");
         script.src = "https://www.youtube.com/iframe_api";
         document.head.appendChild(script);
+        // For some reason waitinf for init isn't enough for it to generate
+        var observer = new MutationObserver(function (mutations, me) {
+            var embedding = document.querySelector("#media-embed");
+            if (embedding) {
+                console.debug(embedding);
+                embedding.appendChild(playlist);
+                me.disconnect();
+                return;
+            }
+        });
         let playlist = document.createElement("div");
         playlist.id = "ytplaylist";
-        document.body.appendChild(playlist);
+        // Start observing after playlist has been created
+        observer.observe(document, {childList: true, subtree: true});
         playlist.style.top = (document.querySelector("#header-bar").offsetHeight + 5) + "px";
         playlist.style.right = "5px";
 
@@ -114,8 +125,8 @@
         qr.parentNode.insertBefore(toggle, qr);
         toggle.querySelector("a").onclick = function () {
             if (threadIds.length > 0) {
-                let container = document.querySelector("#ytplaylist");
-                container.classList.toggle("show");
+                let container = document.querySelector("#embedding");
+                container.classList.toggle("empty");
                 this.classList.toggle("disabled");
             } else {
                 sendNotif("warning", "No valid links in this thread. :c", 3)
@@ -126,12 +137,12 @@
         let css = document.createElement("style");
         document.head.appendChild(css);
         css.textContent = `
-            #ytplaylist {
-                z-index: 9;
-                position: fixed;
+            #embedding .move {
+                height: 18px;
+            }
+            #embedding a {
                 display: none;
             }
-            #ytplaylist.show {display: initial;}
         `;
     });
 
