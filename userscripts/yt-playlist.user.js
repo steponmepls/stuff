@@ -18,7 +18,7 @@
 
 (function() {
     'use strict';
-    var ytPlayer, threadIds = [], needsUpdate = false, isPlaying = false;
+    var ytPlayer, toggle, threadIds = [], needsUpdate = false, isPlaying = false;
 
     document.addEventListener("4chanXInitFinished", function() {
         let thread = document.querySelector(".board .thread");
@@ -53,7 +53,17 @@
         // For some reason waitinf for init isn't enough for it to generate
         var observer = new MutationObserver(function (mutations, me) {
             var embedding = document.querySelector("#media-embed");
-            if (embedding) {embedding.appendChild(playlist); me.disconnect(); return};
+            if (embedding) {
+                embedding.appendChild(playlist);
+                let jumpTo = document.querySelector("#embedding a.jump");
+                jumpTo.style.display = "none";
+                let closeEmbed = document.querySelector("#embedding a.close");
+                closeEmbed.addEventListener("click", function() {
+                    toggle.querySelector("a").classList.add("disabled");
+                });
+                me.disconnect();
+                return
+            };
         });
         let playlist = document.createElement("div");
         playlist.id = "ytplaylist";
@@ -104,7 +114,7 @@
         };
 
         // Toggle in top bar
-        let toggle = document.createElement("span");
+        toggle = document.createElement("span");
         toggle.id = "shortcut-youtube";
         toggle.classList.add("shortcut");
         toggle.innerHTML = `
@@ -117,18 +127,6 @@
         let qr = document.querySelector("#header-bar #shortcuts #shortcut-qr");
         qr.parentNode.insertBefore(toggle, qr);
         toggle.querySelector("a").onclick = togglePlaylist;
-
-        // Styling
-        let css = document.createElement("style");
-        document.head.appendChild(css);
-        css.textContent = `
-            #embedding .move {
-                height: 18px;
-            }
-            #embedding a {
-                display: none;
-            }
-        `;
     });
 
     // Functions
