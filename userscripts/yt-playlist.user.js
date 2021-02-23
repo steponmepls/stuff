@@ -1,9 +1,14 @@
 // ==UserScript==
 // @name 4chanX YouTube Playlists for /jp/
+// @version 1.0
+// @namespace 4chan-X-jp-playlist
 // @description Wraps all YouTube links within a thread into an embedded playlist
 // @include https://boards.4channel.org/jp/thread/*
+// @connect www.youtube.com
 // @grant none
 // @run-at document-start
+// @updateURL https://github.com/steponmepls/stuff/raw/main/userscripts/yt-playlist.user.js
+// @downloadURL https://github.com/steponmepls/stuff/raw/main/userscripts/yt-playlist.user.js
 // ==/UserScript==
 
 // -----------------[Add the following exceptions]------------------|
@@ -79,7 +84,8 @@
                     'fs': 0,
                     'disablekb': 1,
                     'modestbranding': 1,
-                    'playlist': threadIds.toString()
+                    'playlist': threadIds.toString(),
+                    'origin': window.location.hostname 
                 },
                 events: {
                     "onError": function(e) {
