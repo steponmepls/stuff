@@ -116,7 +116,7 @@
         `;
         let qr = document.querySelector("#header-bar #shortcuts #shortcut-qr");
         qr.parentNode.insertBefore(toggle, qr);
-        toggle.querySelector("a").onclick = function () {togglePlaylist()};
+        toggle.querySelector("a").onclick = togglePlaylist;
 
         // Styling
         let css = document.createElement("style");
