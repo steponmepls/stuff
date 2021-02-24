@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name 4chanX YouTube Playlists for /jp/
-// @version 1.0
+// @version 1.1
 // @namespace 4chan-X-jp-playlist
 // @description Wraps all YouTube links within a thread into an embedded playlist
 // @include https://boards.4channel.org/jp/thread/*
@@ -23,29 +23,29 @@
 
 (function() {
     'use strict';
-    var ytPlayer, toggle, threadIds = [], needsUpdate = false, isPlaying = false;
 
     document.addEventListener("4chanXInitFinished", function() {
-        let thread = document.querySelector(".board .thread");
-        let posts = thread.querySelectorAll(".postContainer");
-        posts.forEach(post => fetchIds(post));
+        const threadVids = {};
+        let ytPlayer, toggle, needsUpdate = false, isPlaying = false, currentVideo;
 
-        // Check for new ids on thread update
+        let thread = document.querySelector(".thread");
+        thread.querySelectorAll(".postContainer").forEach(post => {
+            let fullid = post.getAttribute("data-full-i-d");
+            fetchIds(fullid);
+        });
+
         document.addEventListener("ThreadUpdate", function(e) {
-            if (e.detail.newPosts.length > 0) { // New posts
+            if (e.detail.newPosts.length > 0) {
                 let newPosts = e.detail.newPosts;
-                newPosts.forEach(postId => {
-                    let fullId = "[data-full-i-d='" + postId + "']";
-                    let post = thread.querySelector(".postContainer" + fullId);
-                    fetchIds(post);
-                });
-            };
-            if (e.detail.deletedPosts.length > 0) { // Deleted posts
-                let delPosts = e.detail.deletedPosts;
-                delPosts.forEach(postId => {
-                    let fullId = "[data-full-i-d='" + postId + "']";
-                    let post = thread.querySelector(".postContainer" + fullId);
-                    fetchIds(post, e.detail.deletedPosts.length > 0);
+                newPosts.forEach(fullid => {fetchIds(fullid)});
+            }
+            if (e.detail.deletedPosts.length > 0) {
+                let delPosts = e.detail.newPosts;
+                delPosts.forEach(fullid => {
+                    if (Object.keys(threadVids).includes(fullid)) {
+                        if (!needsUpdate) {needsUpdate = true};
+                        delete threadVids[fullid];
+                    }
                 });
             };
             if (ytPlayer && !isPlaying && needsUpdate) {updatePlaylist()};
@@ -56,12 +56,16 @@
         script.src = "https://www.youtube.com/iframe_api";
         document.head.appendChild(script);
         // For some reason waitinf for init isn't enough for it to generate
-        var observer = new MutationObserver(function (mutations, me) {
-            var embedding = document.querySelector("#media-embed");
+        let observer = new MutationObserver(function (mutations, me) {
+            let embedding = document.querySelector("#media-embed");
             if (embedding) {
                 embedding.appendChild(playlist);
                 let jumpTo = document.querySelector("#embedding a.jump");
-                jumpTo.style.display = "none";
+                jumpTo.addEventListener("click", function(e) {
+                    e.preventDefault();
+                    let source = Object.entries(threadVids).find(post => post[1].includes(currentVideo))[0];
+                    document.getElementById("p" + source.split(".")[1]).scrollIntoView();
+                });
                 let closeEmbed = document.querySelector("#embedding a.close");
                 closeEmbed.addEventListener("click", function() {
                     toggle.querySelector("a").classList.add("disabled");
@@ -76,7 +80,10 @@
         observer.observe(document, {childList: true, subtree: true});
 
         window.onYouTubeIframeAPIReady = function() {
+            // Skip first update check on init
             if (!ytPlayer) {needsUpdate = false};
+            // Merge id arrays and skip dupes
+            let playlist = [...new Set(Object.values(threadVids).flat())];
             ytPlayer = new YT.Player('ytplaylist', {
                 width: '512',
                 height: '288',
@@ -84,22 +91,21 @@
                     'fs': 0,
                     'disablekb': 1,
                     'modestbranding': 1,
-                    'playlist': threadIds.toString(),
-                    'origin': window.location.hostname 
+                    'playlist': playlist.toString()
                 },
                 events: {
                     "onError": function(e) {
-                        var errMsg, errLvl;
+                        let errMsg, errLvl;
                         if (e.data == 101 || e.data == 150) {
                             errLvl = "warning";
                             errMsg = "The owner of the requested video does not allow it to be played in embedded players.";
                         } else if (e.data == 2) {
                             errLvl = "error";
                             errMsg = "The request contains an invalid parameter value.";
-                        } else if (e.data == 2) {
+                        } else if (e.data == 5) {
                             errLvl = "error";
                             errMsg = "The requested content cannot be played in an HTML5 player.";
-                        } else if (e.data == 2) {
+                        } else if (e.data == 100) {
                             errLvl = "warning";
                             errMsg = "The video has been removed or marked as private.";
                         };
@@ -107,13 +113,20 @@
                         let output = "Error - Video #" + index + "\n" + errMsg;
                         console.warn(output);
                         sendNotif(errLvl, output, 10);
+                        // Automatically skip to next video on error
                         e.target.nextVideo();
+                    },
+                    "onReady": function(e) {
+                        if (Object.entries(threadVids).length > 0) {
+                            currentVideo = e.target.getVideoUrl().split("=").pop()
+                        }
                     },
                     "onStateChange": function(e) {
                         // -1 unstarted; 0 ended; 1 playing; 2 paused; 3 buffering; 5 video cued
                         // console.debug("#" + (e.target.getPlaylistIndex() + 1) + " [" + e.data + "]");
                         if (e.data == 0 && needsUpdate) {updatePlaylist()};
                         if (e.data == 1 || e.data == 3) {isPlaying = true} else {isPlaying = false};
+                        if (e.data == -1) {currentVideo = e.target.getVideoUrl().split("=").pop()};
                     }
                 }
             });
@@ -133,72 +146,67 @@
         let qr = document.querySelector("#header-bar #shortcuts #shortcut-qr");
         qr.parentNode.insertBefore(toggle, qr);
         toggle.querySelector("a").onclick = togglePlaylist;
-    });
 
-    // Functions
-    function fetchIds(post, isDead) {
-        if (post.querySelector("a.linkify.youtube")) {
-            let postIds = [];
-            let postLinks = post.querySelectorAll("a.linkify.youtube + a.embedder");
-            postLinks.forEach(link => postIds.push(link.getAttribute("data-uid")));
-            postIds.forEach(id => {
-                if (!threadIds.includes(id)) {
-                    if (!needsUpdate) {needsUpdate = true};
-                    threadIds.push(id);
+        function fetchIds(id) {
+            let post = thread.querySelector(".postContainer[data-full-i-d='" + id + "']");
+            if (post.querySelector("a.linkify.youtube")) {
+                let postIds = [];
+                post.querySelectorAll("a.linkify.youtube + a.embedder").forEach(link => {
+                    postIds.push(link.getAttribute("data-uid"));
+                    if (!Object.values(threadVids).flat().includes(link.getAttribute("data-uid"))) {
+                        if (!needsUpdate) {needsUpdate = true}
+                    };
+                });
+                threadVids[id] = postIds;
+            }
+        }
+
+        function updatePlaylist(state) {
+            let playlist = [...new Set(Object.values(threadVids).flat())];
+            let index = ytPlayer.getPlaylistIndex();
+            if (isPlaying && state == 0) {
+                ytPlayer.loadPlaylist();
+                setTimeout(function(){ ytPlayer.loadPlaylist(playlist, index) }, 500);
+            } else {
+                let cTime = ytPlayer.getCurrentTime();
+                ytPlayer.cuePlaylist();
+                setTimeout(function(){ ytPlayer.cuePlaylist(playlist, index, cTime) }, 500);
+            };
+            needsUpdate = false;
+        }
+
+        function togglePlaylist() {
+            if (Object.entries(threadVids).length > 0) {
+                if (ytPlayer){
+                    let container = document.querySelector("#embedding");
+                    container.classList.toggle("empty");
+                    this.classList.toggle("disabled");
                 } else {
-                    if (isDead === true) {
-                        if (!needsUpdate) {needsUpdate = true};
-                        threadIds.pop(id);
-                    }
+                    sendNotif("error", "Unable to load YouTube Iframe API.\nPress F12 and check for errors in the console.");
+                    console.error("Unable to load YouTube Iframe API.\n" +
+                    "Remember to add the following exceptions:\n" +
+                    "4chanX's Settings > Advanced > Javascript Whitelist\n" +
+                    "- https://www.youtube.com/iframe_api\n" +
+                    "- https://www.youtube.com/s/player/\n" +
+                    "Filters in your AdBlock extension\n" +
+                    "- @@||www.youtube.com/iframe_api$script,domain=4channel.org\n" +
+                    "- @@||www.youtube.com/s/player/*$script,domain=4channel.org\n"
+                    );
+                }
+            } else {
+                sendNotif("warning", "No valid links in this thread. :c", 3)
+            };
+        };
+
+        function sendNotif(type, msg, lifetime) {
+            let event = new CustomEvent("CreateNotification", {
+                "detail": {
+                    'type': type, // 'info', 'success', 'warning', or 'error'
+                    'content': msg, // string
+                    'lifetime': lifetime // optional - time in seconds till it disappears
                 }
             });
-        }
-    };
-
-    function togglePlaylist() {
-        if (threadIds.length > 0) {
-            if (ytPlayer){
-                let container = document.querySelector("#embedding");
-                container.classList.toggle("empty");
-                this.classList.toggle("disabled");
-            } else {
-                sendNotif("error", "Unable to load YouTube Iframe API.\nPress F12 and check for errors in the console.");
-                console.error("Unable to load YouTube Iframe API.\n" +
-                "Remember to add the following exceptions:\n" +
-                "4chanX's Settings > Advanced > Javascript Whitelist\n" +
-                "- https://www.youtube.com/iframe_api\n" +
-                "- https://www.youtube.com/s/player/\n" +
-                "Filters in your AdBlock extension\n" +
-                "- @@||www.youtube.com/iframe_api$script,domain=4channel.org\n" +
-                "- @@||www.youtube.com/s/player/*$script,domain=4channel.org\n"
-                );
-            }
-        } else {
-            sendNotif("warning", "No valid links in this thread. :c", 3)
+            document.dispatchEvent(event);
         };
-    };
-
-    function updatePlaylist(state) {
-        let index = ytPlayer.getPlaylistIndex();
-        let cTime = ytPlayer.getCurrentTime();
-        if (isPlaying && state == 0) {
-            ytPlayer.loadPlaylist();
-            setTimeout(function(){ ytPlayer.loadPlaylist(threadIds, index) }, 500);
-        } else {
-            ytPlayer.cuePlaylist();
-            setTimeout(function(){ ytPlayer.cuePlaylist(threadIds, index, cTime) }, 500);
-        };
-        needsUpdate = false;
-    };
-
-    function sendNotif(type, msg, lifetime) {
-        let event = new CustomEvent("CreateNotification", {
-            "detail": {
-                'type': type, // 'info', 'success', 'warning', or 'error'
-                'content': msg, // string
-                'lifetime': lifetime // optional - time in seconds till it disappears
-            }
-        });
-        document.dispatchEvent(event);
-    };
+    });
 })();
