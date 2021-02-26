@@ -34,6 +34,9 @@
             fetchIds(fullid);
         });
 
+        // Init playlist if thread already contains YouTube links
+        if (Object.entries(threadVids).length > 0) { initPlaylist() };
+
         document.addEventListener("ThreadUpdate", function(e) {
             if (e.detail.newPosts.length > 0) {
                 let newPosts = e.detail.newPosts;
@@ -48,36 +51,9 @@
                     }
                 });
             };
-            if (ytPlayer && !isPlaying && needsUpdate) {updatePlaylist()};
+            if (!ytPlayer && Object.entries(threadVids).length > 0) { initPlaylist() };
+            if (ytPlayer && !isPlaying && needsUpdate) { updatePlaylist() };
         });
-
-        // Init YouTube Iframe API
-        let script = document.createElement("script");
-        script.src = "https://www.youtube.com/iframe_api";
-        document.head.appendChild(script);
-        // For some reason waitinf for init isn't enough for it to generate
-        let observer = new MutationObserver(function (mutations, me) {
-            let embedding = document.querySelector("#media-embed");
-            if (embedding) {
-                embedding.appendChild(playlist);
-                let jumpTo = document.querySelector("#embedding a.jump");
-                jumpTo.addEventListener("click", function(e) {
-                    e.preventDefault();
-                    let source = Object.entries(threadVids).find(post => post[1].includes(currentVideo))[0];
-                    document.getElementById("p" + source.split(".")[1]).scrollIntoView();
-                });
-                let closeEmbed = document.querySelector("#embedding a.close");
-                closeEmbed.addEventListener("click", function() {
-                    toggle.querySelector("a").classList.add("disabled");
-                });
-                me.disconnect();
-                return
-            };
-        });
-        let playlist = document.createElement("div");
-        playlist.id = "ytplaylist";
-        // Start observing after playlist has been created
-        observer.observe(document, {childList: true, subtree: true});
 
         window.onYouTubeIframeAPIReady = function() {
             // Skip first update check on init
@@ -132,21 +108,6 @@
             });
         };
 
-        // Toggle in top bar
-        toggle = document.createElement("span");
-        toggle.id = "shortcut-youtube";
-        toggle.classList.add("shortcut");
-        toggle.innerHTML = `
-            <a class="fa fa-youtube-play disabled" 
-                title="Toggle YouTube Playlist" 
-                href="javascript:;">
-                YT
-            </a>
-        `;
-        let qr = document.querySelector("#header-bar #shortcuts #shortcut-qr");
-        qr.parentNode.insertBefore(toggle, qr);
-        toggle.querySelector("a").onclick = togglePlaylist;
-
         function fetchIds(id) {
             let post = thread.querySelector(".postContainer[data-full-i-d='" + id + "']");
             if (post.querySelector("a.linkify.youtube")) {
@@ -160,6 +121,56 @@
                 threadVids[id] = postIds;
             }
         }
+
+        function initPlaylist() {
+            if (Object.entries(threadVids).length > 0) {
+                // Init YouTube Iframe API
+                let script = document.createElement("script");
+                script.src = "https://www.youtube.com/iframe_api";
+                document.head.appendChild(script);
+
+                // For some reason waiting for init isn't enough for #embedding to generate
+                let observer = new MutationObserver(function (mutations, me) {
+                    let embedding = document.querySelector("#media-embed");
+                    if (embedding) {
+                        embedding.appendChild(playlist);
+                        let jumpTo = document.querySelector("#embedding a.jump");
+                        jumpTo.addEventListener("click", function(e) {
+                            e.preventDefault();
+                            let source = Object.entries(threadVids).find(post => post[1].includes(currentVideo))[0];
+                            document.getElementById("p" + source.split(".")[1]).scrollIntoView();
+                        });
+                        let closeEmbed = document.querySelector("#embedding a.close");
+                        closeEmbed.addEventListener("click", function() {
+                            toggle.querySelector("a").classList.add("disabled");
+                        });
+                        me.disconnect();
+                        return
+                    };
+                });
+                
+                let playlist = document.createElement("div");
+                playlist.id = "ytplaylist";
+
+                // Start observing after playlist has been created
+                observer.observe(document, {childList: true, subtree: true});
+
+                // Toggle in top bar
+                toggle = document.createElement("span");
+                toggle.id = "shortcut-youtube";
+                toggle.classList.add("shortcut");
+                toggle.innerHTML = `
+                    <a class="fa fa-youtube-play disabled" 
+                        title="Toggle YouTube Playlist" 
+                        href="javascript:;">
+                        YT
+                    </a>
+                `;
+                let qr = document.querySelector("#header-bar #shortcuts #shortcut-qr");
+                qr.parentNode.insertBefore(toggle, qr);
+                toggle.querySelector("a").onclick = togglePlaylist;
+            }
+        };
 
         function updatePlaylist(state) {
             let playlist = [...new Set(Object.values(threadVids).flat())];
