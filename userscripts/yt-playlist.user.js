@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name 4chanX YouTube Playlists for /jp/
-// @version 1.2.1
+// @version 1.2.2
 // @namespace 4chan-X-jp-playlist
 // @description Wraps all YouTube links within a thread into an embedded playlist
 // @include https://boards.4channel.org/jp/thread/*
@@ -42,25 +42,27 @@
             };
 
             document.addEventListener("ThreadUpdate", function (e) {
-                if (e.detail.newPosts.length > 0) {
-                    let newPosts = e.detail.newPosts;
-                    newPosts.forEach(fullid => { fetchIds(fullid); });
+                if (e.detail[404] === false) {
+                    if (e.detail.newPosts.length > 0) {
+                        let newPosts = e.detail.newPosts;
+                        newPosts.forEach(fullid => { fetchIds(fullid); });
+                    }
+                    if (e.detail.deletedPosts.length > 0) {
+                        let delPosts = e.detail.newPosts;
+                        delPosts.forEach(fullid => {
+                            if (Object.keys(threadVids).includes(fullid)) {
+                                if (!needsUpdate) { needsUpdate = true; };
+                                delete threadVids[fullid];
+                            }
+                        });
+                    };
+                    if (!ytPlayer && Object.entries(threadVids).length > 0) {
+                        let script = document.createElement("script");
+                        script.src = "https://www.youtube.com/iframe_api";
+                        document.head.appendChild(script);
+                    };
+                    if (ytPlayer && !isPlaying && needsUpdate) { updatePlaylist() };
                 }
-                if (e.detail.deletedPosts.length > 0) {
-                    let delPosts = e.detail.newPosts;
-                    delPosts.forEach(fullid => {
-                        if (Object.keys(threadVids).includes(fullid)) {
-                            if (!needsUpdate) { needsUpdate = true; };
-                            delete threadVids[fullid];
-                        }
-                    });
-                };
-                if (!ytPlayer && Object.entries(threadVids).length > 0) {
-                    let script = document.createElement("script");
-                    script.src = "https://www.youtube.com/iframe_api";
-                    document.head.appendChild(script);
-                };
-                if (ytPlayer && !isPlaying && needsUpdate) { updatePlaylist() };
             });
 
             window.onYouTubeIframeAPIReady = function () {
