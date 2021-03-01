@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name 4chanX YouTube Playlists for /jp/
-// @version 1.2
+// @version 1.2.1
 // @namespace 4chan-X-jp-playlist
 // @description Wraps all YouTube links within a thread into an embedded playlist
 // @include https://boards.4channel.org/jp/thread/*
@@ -123,21 +123,7 @@
                         jumpTo.parentNode.insertBefore(pager, jumpTo);
 
                         let i = 0;
-                        while (i < playlist.length) {
-                            let newPage = document.createElement("a");
-                            newPage.href = "javascript:;";
-                            newPage.setAttribute("data-page", (i + 1));
-                            newPage.innerHTML = i + 1;
-                            newPage.style = "padding: 0 2px;"
-                            pager.appendChild(newPage);
-                            newPage.addEventListener("click", (e) => {
-                                e.preventDefault();
-                                let chunkedPlaylist = splitPlaylist([...new Set(Object.values(threadVids).flat())], 200);
-                                ytPlayer.cuePlaylist();
-                                setTimeout(function () { ytPlayer.cuePlaylist( chunkedPlaylist[e.target.getAttribute("data-page") - 1] ) }, 500);
-                            });
-                            i++;
-                        };
+                        while (i < playlist.length) { addNewpage(i); i++; };
 
                         ytPlayer = new YT.Player('ytplaylist', {
                             width: '512',
@@ -220,6 +206,7 @@
 
             function updatePlaylist(state) {
                 let playlist = splitPlaylist([...new Set(Object.values(threadVids).flat())], 200);
+                let pages = document.querySelectorAll("#ytplaylist-page a[data-page]");
                 let index = ytPlayer.getPlaylistIndex();
                 let i = 0;
                 while (i < playlist.length) {
@@ -233,9 +220,33 @@
                             setTimeout(function () { ytPlayer.cuePlaylist(playlist[i], index, cTime); }, 500);
                         };
                     };
+
+                    // Reset pager if number of pages and chunked playlist length doesn't match
+                    if (pages.length > playlist.length) {
+                        pages.forEach(page => {pages.removeChild(page)});
+                        pages = document.querySelectorAll("#ytplaylist-page a[data-page]");  
+                    };
+                    if ((i + 1) > pages.length) { addNewpage(i) };
+
                     i++;
                 };
                 needsUpdate = false;
+            }
+
+            function addNewpage(i) {
+                let pager = document.querySelector("#ytplaylist-pager");
+                let newPage = document.createElement("a");
+                newPage.href = "javascript:;";
+                newPage.setAttribute("data-page", (i + 1));
+                newPage.innerHTML = i + 1;
+                newPage.style = "padding: 0 2px;"
+                pager.appendChild(newPage);
+                newPage.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    let chunkedPlaylist = splitPlaylist([...new Set(Object.values(threadVids).flat())], 200);
+                    ytPlayer.cuePlaylist();
+                    setTimeout(function () { ytPlayer.cuePlaylist( chunkedPlaylist[e.target.getAttribute("data-page") - 1] ) }, 500);
+                });
             }
 
             function sendNotif(type, msg, lifetime) {
