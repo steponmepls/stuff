@@ -1,25 +1,12 @@
 // ==UserScript==
-// @name 4chanX YouTube Playlists for /jp/
-// @version 1.2.3
-// @namespace 4chan-X-jp-playlist
+// @name 4chanX YouTube Playlists for /jp/ - beta
+// @namespace 4chan-X-jp-playlist-beta
 // @description Wraps all YouTube links within a thread into an embedded playlist
 // @include https://boards.4channel.org/jp/thread/*
 // @connect www.youtube.com
 // @grant none
 // @run-at document-start
-// @updateURL https://github.com/steponmepls/stuff/raw/main/userscripts/yt-playlist.user.js
-// @downloadURL https://github.com/steponmepls/stuff/raw/main/userscripts/yt-playlist.user.js
 // ==/UserScript==
-
-// -----------------[Add the following exceptions]------------------|
-// 4chanX's Settings > Advanced > Javascript Whitelist              |
-// https://www.youtube.com/iframe_api                               |
-// https://www.youtube.com/s/player/                                |
-// -----------------------------------------------------------------|
-// uBlock Origin's Dashboard > My filters                           |
-// @@||www.youtube.com/iframe_api$script,domain=4channel.org        |
-// @@||www.youtube.com/s/player/*$script,domain=4channel.org        |
-// -----------------------------------------------------------------|
 
 (function() {
     'use strict';
@@ -210,13 +197,6 @@
                 let playlist = splitPlaylist([...new Set(Object.values(threadVids).flat())], 200);
                 let pages = document.querySelectorAll("#ytplaylist-page a[data-page]");
                 let index = ytPlayer.getPlaylistIndex();
-
-                // Reset pager if number of pages and chunked playlist length doesn't match
-                if (pages.length > playlist.length) {
-                    pages.forEach(page => {page.parentNode.removeChild(page)});
-                    pages = document.querySelectorAll("#ytplaylist-page a[data-page]");
-                };
-
                 let i = 0;
                 while (i < playlist.length) {
                     if (playlist[i].includes(currentVideo)) {
@@ -229,30 +209,33 @@
                             setTimeout(function () { ytPlayer.cuePlaylist(playlist[i], index, cTime); }, 500);
                         };
                     };
-                    if (playlist.length > pages.length) { addNewpage(i) };
+
+                    // Reset pager if number of pages and chunked playlist length doesn't match
+                    if (pages.length > playlist.length) {
+                        pages.forEach(page => {pages.removeChild(page)});
+                        pages = document.querySelectorAll("#ytplaylist-page a[data-page]");  
+                    };
+                    if ((i + 1) > pages.length) { addNewpage(i) };
 
                     i++;
                 };
-
                 needsUpdate = false;
             }
 
             function addNewpage(i) {
                 let pager = document.querySelector("#ytplaylist-pager");
-                if (!pager.querySelector("a[data-page='" + i + "']")) {
-                    let newPage = document.createElement("a");
-                    newPage.href = "javascript:;";
-                    newPage.setAttribute("data-page", (i + 1));
-                    newPage.innerHTML = i + 1;
-                    newPage.style = "padding: 0 2px;"
-                    pager.appendChild(newPage);
-                    newPage.addEventListener("click", (e) => {
-                        e.preventDefault();
-                        let chunkedPlaylist = splitPlaylist([...new Set(Object.values(threadVids).flat())], 200);
-                        ytPlayer.cuePlaylist();
-                        setTimeout(function () { ytPlayer.cuePlaylist( chunkedPlaylist[e.target.getAttribute("data-page") - 1] ) }, 500);
-                    });
-                }
+                let newPage = document.createElement("a");
+                newPage.href = "javascript:;";
+                newPage.setAttribute("data-page", (i + 1));
+                newPage.innerHTML = i + 1;
+                newPage.style = "padding: 0 2px;"
+                pager.appendChild(newPage);
+                newPage.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    let chunkedPlaylist = splitPlaylist([...new Set(Object.values(threadVids).flat())], 200);
+                    ytPlayer.cuePlaylist();
+                    setTimeout(function () { ytPlayer.cuePlaylist( chunkedPlaylist[e.target.getAttribute("data-page") - 1] ) }, 500);
+                });
             }
 
             function sendNotif(type, msg, lifetime) {
