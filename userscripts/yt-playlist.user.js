@@ -124,8 +124,9 @@
                         pager.id = "ytplaylist-pager";
                         jumpTo.parentNode.insertBefore(pager, jumpTo);
 
+                        // Add initial pages
                         let i = 0;
-                        while (i < playlist.length) { addNewpage(i); i++; };
+                        while (i < playlist.length) { addNewpage(i); i++ };
 
                         ytPlayer = new YT.Player('ytplaylist', {
                             width: '512',
@@ -230,7 +231,6 @@
                         };
                     };
                     if (playlist.length > pages.length) { addNewpage(i) };
-
                     i++;
                 };
 
@@ -239,7 +239,7 @@
 
             function addNewpage(i) {
                 let pager = document.querySelector("#ytplaylist-pager");
-                if (!pager.querySelector("a[data-page='" + i + "']")) {
+                if (!pager.querySelector("a[data-page='" + (i + 1) + "']")) {
                     let newPage = document.createElement("a");
                     newPage.href = "javascript:;";
                     newPage.setAttribute("data-page", (i + 1));
@@ -252,7 +252,7 @@
                         ytPlayer.cuePlaylist();
                         setTimeout(function () { ytPlayer.cuePlaylist( chunkedPlaylist[e.target.getAttribute("data-page") - 1] ) }, 500);
                     });
-                }
+                };
             }
 
             function sendNotif(type, msg, lifetime) {
