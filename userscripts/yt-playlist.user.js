@@ -26,27 +26,31 @@
 
     document.addEventListener("4chanXInitFinished", () => {
             const threadVids = {};
-            let ytPlayer, toggle, needsUpdate = false, isPlaying = false, currentVideo;
+            let ytPlayer, needsUpdate = false, isPlaying = false;
 
+            // Start fetching all YouTube links in a page on first load
             let thread = document.querySelector(".thread");
             thread.querySelectorAll(".postContainer").forEach(post => {
                 let fullid = post.getAttribute("data-full-i-d");
                 fetchIds(fullid);
             });
 
-            // Init YouTube Iframe API if thread already contains YouTube links
+            // Init YouTube Iframe API if at least a link is found
             if (Object.entries(threadVids).length > 0) {
                 let script = document.createElement("script");
                 script.src = "https://www.youtube.com/iframe_api";
                 document.head.appendChild(script);
             };
 
+            // Handle new and deleted posts so playlist gets updated
             document.addEventListener("ThreadUpdate", function (e) {
                 if (e.detail[404] === false) {
+                    // If new posts
                     if (e.detail.newPosts.length > 0) {
                         let newPosts = e.detail.newPosts;
                         newPosts.forEach(fullid => { fetchIds(fullid); });
                     }
+                    // If deleted posts
                     if (e.detail.deletedPosts.length > 0) {
                         let delPosts = e.detail.newPosts;
                         delPosts.forEach(fullid => {
@@ -56,23 +60,78 @@
                             }
                         });
                     };
+                    // Init playlist if new YouTube links are added for the first time
                     if (!ytPlayer && Object.entries(threadVids).length > 0) {
                         let script = document.createElement("script");
                         script.src = "https://www.youtube.com/iframe_api";
                         document.head.appendChild(script);
                     };
+                    // Refresh playlist if not playing and needs update
                     if (ytPlayer && !isPlaying && needsUpdate) { updatePlaylist() };
                 }
             });
 
             window.onYouTubeIframeAPIReady = function () {
-                if (!ytPlayer) { needsUpdate = false; }; // Skip first update check on init
+                let currentVideo;
+
+                 // Skip first update check on init
+                if (!ytPlayer) { needsUpdate = false; };
 
                 let playlistContainer = document.createElement("div");
                 playlistContainer.id = "ytplaylist";
                 let playlist = splitPlaylist([...new Set(Object.values(threadVids).flat())], 200);
 
-                toggle = document.createElement("span");
+                ytPlayer = new YT.Player('ytplaylist', {
+                    width: '512',
+                    height: '288',
+                    playerVars: {
+                        'fs': 0,
+                        'disablekb': 1,
+                        'modestbranding': 1,
+                        'playlist': playlist[0].toString()
+                    },
+                    events: {
+                        "onError": function (e) {
+                            let errLvl, errMsg, index, output;
+                            if (e.data == 101 || e.data == 150) {
+                                errLvl = "warning";
+                                errMsg = "The owner of the requested video does not allow it to be played in embedded players.";
+                            } else if (e.data == 2) {
+                                errLvl = "error";
+                                errMsg = "The request contains an invalid parameter value.";
+                            } else if (e.data == 5) {
+                                errLvl = "error";
+                                errMsg = "The requested content cannot be played in an HTML5 player.";
+                            } else if (e.data == 100) {
+                                errLvl = "warning";
+                                errMsg = "The video has been removed or marked as private.";
+                            };
+                            index = e.target.getPlaylistIndex() + 1;
+                            output = "Error - Video #" + index + "\n" + errMsg;
+                            console.warn(output);
+                            sendNotif(errLvl, output, 10);
+                            // Automatically skip to next video on error
+                            e.target.nextVideo();
+                        },
+                        "onReady": function (e) {
+                            if (Object.entries(threadVids).length > 0) {
+                                currentVideo = e.target.getVideoUrl().split("=").pop();
+                            }
+                        },
+                        "onStateChange": function (e) {
+                            // -1 unstarted; 0 ended; 1 playing; 2 paused; 3 buffering; 5 video cued
+                            // console.debug("#" + (e.target.getPlaylistIndex() + 1) + " [" + e.data + "]");
+                            if (e.data == 0 && needsUpdate) { updatePlaylist(e.data) };
+                            if (e.data == 1 || e.data == 3) { isPlaying = true; } else { isPlaying = false; };
+                            if (e.data == -1) { 
+                                let newVideo = e.target.getVideoUrl().split("=").pop();
+                                if (currentVideo !== newVideo) { currentVideo = newVideo };
+                             };
+                        }
+                    }
+                });
+
+                const toggle = document.createElement("span");
                 toggle.id = "shortcut-youtube";
                 toggle.classList.add("shortcut");
                 toggle.innerHTML = '<a class="fa fa-youtube-play disabled" title="Toggle YouTube Playlist" href="javascript:;">YT</a>';
@@ -127,56 +186,6 @@
                         // Add initial pages
                         let i = 0;
                         while (i < playlist.length) { addNewpage(i); i++ };
-
-                        ytPlayer = new YT.Player('ytplaylist', {
-                            width: '512',
-                            height: '288',
-                            playerVars: {
-                                'fs': 0,
-                                'disablekb': 1,
-                                'modestbranding': 1,
-                                'playlist': playlist[0].toString()
-                            },
-                            events: {
-                                "onError": function (e) {
-                                    let errMsg, errLvl;
-                                    if (e.data == 101 || e.data == 150) {
-                                        errLvl = "warning";
-                                        errMsg = "The owner of the requested video does not allow it to be played in embedded players.";
-                                    } else if (e.data == 2) {
-                                        errLvl = "error";
-                                        errMsg = "The request contains an invalid parameter value.";
-                                    } else if (e.data == 5) {
-                                        errLvl = "error";
-                                        errMsg = "The requested content cannot be played in an HTML5 player.";
-                                    } else if (e.data == 100) {
-                                        errLvl = "warning";
-                                        errMsg = "The video has been removed or marked as private.";
-                                    };
-                                    let index = e.target.getPlaylistIndex() + 1;
-                                    let output = "Error - Video #" + index + "\n" + errMsg;
-                                    console.warn(output);
-                                    sendNotif(errLvl, output, 10);
-                                    // Automatically skip to next video on error
-                                    e.target.nextVideo();
-                                },
-                                "onReady": function (e) {
-                                    if (Object.entries(threadVids).length > 0) {
-                                        currentVideo = e.target.getVideoUrl().split("=").pop();
-                                    }
-                                },
-                                "onStateChange": function (e) {
-                                    // -1 unstarted; 0 ended; 1 playing; 2 paused; 3 buffering; 5 video cued
-                                    // console.debug("#" + (e.target.getPlaylistIndex() + 1) + " [" + e.data + "]");
-                                    if (e.data == 0 && needsUpdate) { updatePlaylist(e.data) };
-                                    if (e.data == 1 || e.data == 3) { isPlaying = true; } else { isPlaying = false; };
-                                    if (e.data == -1) { 
-                                        let newVideo = e.target.getVideoUrl().split("=").pop();
-                                        if (currentVideo !== newVideo) { currentVideo = newVideo };
-                                     };
-                                }
-                            }
-                        });
 
                         me.disconnect();
                         return;
