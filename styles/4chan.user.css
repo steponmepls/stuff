@@ -1,6 +1,6 @@
 /* ==UserStyle==
 @name         4chan
-@version      1.0.0
+@version      1.0.1
 @namespace    https://github.com/steponmepls
 @description  Adds a sidebar + fixed qr + mascot
 @updateURL    https://github.com/steponmepls/stuff/styles/4chan.user.css
@@ -198,9 +198,10 @@
     }
     
     #qr iframe {
-        position: absolute;
-        left: calc(100% + 10px);
-        top: -175px;
+        position: fixed;
+        top: calc(var(--header-bar-height) + var(--qr-top-offset));
+        left: var(--sidebar-width);
+        padding-left: 1em;
     }
     
     #thread-watcher {
