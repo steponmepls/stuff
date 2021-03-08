@@ -8,7 +8,7 @@
 @preprocessor default
 ==/UserStyle== */
 
-@-moz-document domain("https://boards.4channel.org/*") {
+@-moz-document regexp("https?://boards.4channel.org\\/[a-z]{1,4}\\/.*") {
     :root {
         /* Sizes */
         --header-bar-height: 24.4px;
