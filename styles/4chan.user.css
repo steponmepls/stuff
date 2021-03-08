@@ -4,12 +4,11 @@
 @namespace    https://github.com/steponmepls
 @description  Adds a sidebar + fixed qr + mascot
 @updateURL    https://github.com/steponmepls/stuff/styles/4chan.user.css
-@downloadURL  https://github.com/steponmepls/stuff/styles/4chan.user.css
 @license      unlicense
 @preprocessor default
 ==/UserStyle== */
 
-@-moz-document domain("https://boards.4channel.org/") {
+@-moz-document domain("https://boards.4channel.org/*") {
     :root {
         /* Sizes */
         --header-bar-height: 24.4px;
