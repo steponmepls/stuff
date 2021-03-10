@@ -5,10 +5,13 @@
 @description  Adds a sidebar + fixed qr + mascot
 @updateURL    https://raw.githubusercontent.com/steponmepls/stuff/main/styles/4chan.user.css
 @license      unlicense
-@preprocessor default
+@preprocessor less
 ==/UserStyle== */
 
 @-moz-document regexp("https?://boards.4channel.org\\/[a-z]{1,4}\\/.*") {
+    /* LeSS Functions */
+    .make-random(@min, @max) { @rnd: floor(`Math.random() * @{max} + @{min}`); }
+    /* Rules */
     :root {
         /* Sizes */
         --header-bar-height: 24.4px;
@@ -30,6 +33,8 @@
     }
     
     body.board_jp {
+        --bg-image-1: url(https://a.pomf.cat/hhwhde.png);
+        --bg-image-2: url(https://a.pomf.cat/boywbo.png);
         --sidebar-bg-img: url(https://a.pomf.cat/hhwhde.png);
     }
     
@@ -44,7 +49,8 @@
     }
     
     body.board_jp::before {
-        background: var(--sidebar-bg-img) no-repeat center bottom / 280px auto;
+        .make-random(1, 2);
+        background: var(--bg-image-@rnd) no-repeat center bottom / 280px auto;
     }
     
     body::before {
