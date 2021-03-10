@@ -1,24 +1,22 @@
 /* ==UserStyle==
 @name         4chan
-@version      1.0.2
+@version      1.0.3
 @namespace    https://github.com/steponmepls
 @description  Adds a sidebar + fixed qr + mascot
 @updateURL    https://raw.githubusercontent.com/steponmepls/stuff/main/styles/4chan.user.css
 @license      unlicense
-@preprocessor stylus
+@preprocessor default
 ==/UserStyle== */
 
 @-moz-document regexp("https?://boards.4channel.org\\/[a-z]{1,4}\\/.*") {
-    /* Functions */
-    random(min, max) return floor( math(0, "random") * max + min )
     /* Rules */
     :root {
         /* Sizes */
         --header-bar-height: 24.4px;
         --sidebar-width: 300px;
         --qr-top-offset: 140px;
-        /* Backgrounds */
-        --sidebar-bg-img-fallback: url(https://files.catbox.moe/1vfhk8.png);
+        /* Fallback */
+        --bg-image-0: url(https://files.catbox.moe/1vfhk8.png);
     }
     
     html.yotsuba-b {
@@ -35,21 +33,16 @@
     body.board_jp {
         --bg-image-1: url(https://a.pomf.cat/hhwhde.png);
         --bg-image-2: url(https://a.pomf.cat/boywbo.png);
-        --sidebar-bg-img: url(https://a.pomf.cat/hhwhde.png);
+    }
+
+    body.board_g {
+        --bg-image-1: url(https://files.catbox.moe/1vfhk8.png);
     }
     
     /* Sidebar */
     body {
         width: calc(100% - var(--sidebar-width));
         float: right;
-    }
-    
-    body:not(.board_jp)::before {
-        background: var(--sidebar-bg-img-fallback) no-repeat center bottom / 280px auto;
-    }
-    
-    body.board_jp::before {
-        background: var(--bg-image-(random(1, 100))) no-repeat center bottom / 280px auto;
     }
     
     body::before {
@@ -61,14 +54,11 @@
         top: var(--header-bar-height);
         left: 0;
         border-right: 1px solid;
-    }
-    
-    html.yotsuba-b body::before {
         background-color: var(--bg-color);
-    }
-    
-    html.yotsuba body::before {
-        background-color: var(--bg-color);
+        background-image: var(--bg-image-1, --bg-image-0);
+        background-position: center bottom;
+        background-size: 280px auto;
+        background-repeat: no-repeat;
     }
     
     html.yotsuba-b body::before,
