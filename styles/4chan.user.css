@@ -55,7 +55,7 @@
         left: 0;
         border-right: 1px solid;
         background-color: var(--bg-color);
-        background-image: var(--bg-image-1, --bg-image-0);
+        background-image: var(--bg-image-1, var(--bg-image-0));
         background-position: center bottom;
         background-size: 280px auto;
         background-repeat: no-repeat;
