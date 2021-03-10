@@ -5,12 +5,12 @@
 @description  Adds a sidebar + fixed qr + mascot
 @updateURL    https://raw.githubusercontent.com/steponmepls/stuff/main/styles/4chan.user.css
 @license      unlicense
-@preprocessor less
+@preprocessor stylus
 ==/UserStyle== */
 
 @-moz-document regexp("https?://boards.4channel.org\\/[a-z]{1,4}\\/.*") {
-    /* LeSS Functions */
-    .make-random(@min, @max) { @rnd: floor(`Math.random() * @{max} + @{min}`); }
+    /* Functions */
+    random(min, max) return floor( math(0, "random") * max + min )
     /* Rules */
     :root {
         /* Sizes */
@@ -50,7 +50,7 @@
     
     body.board_jp::before {
         .make-random(1, 2);
-        background: var(--bg-image-@rnd) no-repeat center bottom / 280px auto;
+        background: var(--bg-image-(random(1, 100))) no-repeat center bottom / 280px auto;
     }
     
     body::before {
