@@ -49,7 +49,6 @@
     }
     
     body.board_jp::before {
-        .make-random(1, 2);
         background: var(--bg-image-(random(1, 100))) no-repeat center bottom / 280px auto;
     }
     
