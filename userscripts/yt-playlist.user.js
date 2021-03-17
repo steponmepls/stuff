@@ -161,7 +161,7 @@
                     console.warn(output);
                     sendNotif(errLvl, output, 10);
                     // Automatically skip to next video on error
-                    if (currentIndex < total) { e.target.nextVideo() };
+                    if (index < total) { e.target.nextVideo() };
                 },
                 "onReady": function (e) {
                     // Defuse double update on first load
