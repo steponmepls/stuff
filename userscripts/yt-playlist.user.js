@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name 4chanX YouTube Playlists for /jp/
-// @version 1.2.5
+// @version 1.2.6
 // @namespace 4chan-X-jp-playlist
 // @description Wraps all YouTube links within a thread into an embedded playlist
 // @include https://boards.4channel.org/jp/thread/*
@@ -141,7 +141,7 @@
             },
             events: {
                 "onError": function (e) {
-                    let errLvl, errMsg, index, output;
+                    let errLvl, errMsg, index, total, output;
                     if (e.data == 101 || e.data == 150) {
                         errLvl = "warning";
                         errMsg = "The owner of the requested video does not allow it to be played in embedded players.";
@@ -156,11 +156,12 @@
                         errMsg = "The video has been removed or marked as private.";
                     };
                     index = e.target.getPlaylistIndex() + 1;
+                    total = e.target.getPlaylist().length;
                     output = "Error - Video #" + index + "\n" + errMsg;
                     console.warn(output);
                     sendNotif(errLvl, output, 10);
                     // Automatically skip to next video on error
-                    e.target.nextVideo();
+                    if (currentIndex < total) { e.target.nextVideo() };
                 },
                 "onReady": function (e) {
                     // Defuse double update on first load
