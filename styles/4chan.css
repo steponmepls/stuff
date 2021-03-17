@@ -5,7 +5,7 @@
     --sidebar-width: 300px;
     --qr-top-offset: 140px;
     /* General fallback */
-    --bg-image-0: url(https://files.catbox.moe/1vfhk8.png);
+    --bg-image-0: url(https://);
 }
 
 html.yotsuba-b {
@@ -20,8 +20,17 @@ html.yotsuba {
 }
 
 body.board_jp {
-    --bg-image-0: url(https://a.pomf.cat/boywbo.png);
-    --bg-image-1: url(https://a.pomf.cat/hhwhde.png);
+    /* Image #0 will also act as board-specific fallback */
+    --bg-image-0: url(https://);
+    /* --bg-image-1: url(https://); */
+    /* --bg-image-2: url(https://); */
+    /* --bg-image-3: url(https://); */
+    /* --bg-image-4: url(https://); */
+    /* --bg-image-5: url(https://); */
+    /* --bg-image-6: url(https://); */
+    /* --bg-image-7: url(https://); */
+    /* --bg-image-8: url(https://); */
+    /* --bg-image-9: url(https://); */
 }
 
 /* Sidebar */
