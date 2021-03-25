@@ -3,7 +3,7 @@
 // @namespace       teamcraft-handlers
 // @match           https://www.garlandtools.org/db/
 // @grant           none
-// @version         1.2
+// @version         1.3
 // @author          -
 // @description     Adds TC handlers to Garland Tools recipes.
 // ==/UserScript==
