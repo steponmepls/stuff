@@ -3,7 +3,7 @@
 // @namespace       teamcraft-handlers
 // @match           https://www.garlandtools.org/db/
 // @grant           none
-// @version         1.0
+// @version         1.1
 // @author          -
 // @description     Adds TC handlers to Garland Tools recipes.
 // ==/UserScript==
@@ -35,5 +35,6 @@ function addHandler(r) {
         let simLink = r.querySelector(".craftinfo > div > .action-link + a");
         let newLink = simLink.href.replace(regex, "teamcraft://");
         simLink.setAttribute("href", newLink);
+        simLink.removeAttribute("target");
     }
 };
