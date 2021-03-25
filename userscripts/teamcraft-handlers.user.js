@@ -32,7 +32,7 @@ function addHandler(r) {
     if (r.querySelector(".craftinfo > div > .action-link + a")) {
         r.classList.add("has-handler");
         let simLink = r.querySelector(".craftinfo > div > .action-link + a");
-        let newLink = simLink.href.replace(regex, "teamcraft://");
+        let newLink = simLink.href.replace(regex, "teamcraft:///");
         simLink.setAttribute("href", newLink);
         simLink.removeAttribute("target");
     }
