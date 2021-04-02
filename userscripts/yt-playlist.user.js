@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name 4chanX YouTube Playlists for /jp/
-// @version 1.2.6
+// @version 1.2.7
 // @namespace 4chan-X-jp-playlist
 // @description Wraps all YouTube links within a thread into an embedded playlist
 // @include https://boards.4channel.org/jp/thread/*
@@ -225,23 +225,20 @@
         playlist.forEach((page, index) => {
             // Only replace current playlist page
             if (page.includes(currentVideo)) {
-                // Apparently the default behavior makes cue and load calls already
-                // use the current track as starting point when updating
-                // let cTrack = player.getPlaylistIndex();
-                // 
+                let cTrack = player.getPlaylistIndex();
                 // The empty call + 500ms delayed call is a workaround for a bug
                 // in the API. https://stackoverflow.com/questions/66188481
                 if (isPlaying && state == 0) {
-                    console.debug("loadPlaylist() - isPlaying: " + isPlaying + " state: " + state);
+                    // console.debug("loadPlaylist() - isPlaying: " + isPlaying + " state: " + state);
                     player.loadPlaylist();
-                    setTimeout(function () { player.loadPlaylist(page); }, 500);
+                    setTimeout(function () { player.loadPlaylist(page, cTrack); }, 500);
                 } else {
-                    console.debug("cuePlaylist() - isPlaying: " + isPlaying + " state: " + state);
+                    // console.debug("cuePlaylist() - isPlaying: " + isPlaying + " state: " + state);
                     let cTrack, cTime = player.getCurrentTime();
                     player.cuePlaylist();
                     setTimeout(function () { player.cuePlaylist(page, cTrack, cTime) }, 500);
-                    // cuePlaylist() fails to update playlist without resuming playback
-                    // stopVideo() is a dirty hotfix preventing it from happening
+                    // cuePlaylist() fails to update playlist without resuming playback,
+                    // while stopVideo() is a dirty hotfix preventing it from happening.
                     // You can manually reproduce the issue here: https://jsfiddle.net/Lz1053sr/
                     player.stopVideo();
                 };
