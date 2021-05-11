@@ -38,13 +38,18 @@ Gui, Add, Button, x+2 w112 gCancelLoop vCancelButton Disabled, Cancel
 
 ; Advanced tab
 Gui, Tab, 2
-Gui, Add, Text,, Confirm delay [ConfirmDelay]
-Gui, Add, Edit, w200 vConfirmDelay Limit6 Number, %ConfirmDelayValue%
-Gui, Add, Text,, Synthesize delay [StartcraftDelay]
-Gui, Add, Edit, w200 vStartcraftDelay Limit6 Number, %StartcraftDelayValue%
-Gui, Add, Text,, End of craft delay [EndcraftDelay]
-Gui, Add, Edit, w200 vEndcraftDelay Limit6 Number, %EndcraftDelayValue%
-Gui, Add, Text, w200, `nDouble 'Synthesize' delay if you are playing with high ping (180-200ms).
+Gui, Add, Text, Section, Confirm delay
+Gui, Add, Edit, w65 vConfirmDelay Center Limit6 Number, %ConfirmDelayValue%
+Gui, Add, Button, x+3 yp-1 w65 gSaveConfirmDelay, Save
+Gui, Add, Button, x+2 w65 gResetConfirmDelay, Reset
+Gui, Add, Text, xs, Synthesize delay
+Gui, Add, Edit, w65 vStartcraftDelay Center Limit6 Number, %StartcraftDelayValue%
+Gui, Add, Button, x+3 yp-1 w65 gSaveStartcraftDelay, Save
+Gui, Add, Button, x+2 w65 gResetStartcraftDelay, Reset
+Gui, Add, Text, xs, End of craft delay
+Gui, Add, Edit, w65 vEndcraftDelay Center Limit6 Number, %EndcraftDelayValue%
+Gui, Add, Button, x+3 yp-1 w65 gSaveEndcraftDelay, Save
+Gui, Add, Button, x+2 w65 gResetEndcraftDelay, Reset
 Gui, Tab
 
 ; Debug tab
@@ -56,7 +61,7 @@ Gui, Tab
 
 ; Help tab
 Gui, Tab, 4
-Gui, Add, Edit, Wrap ReadOnly r10 w200, The pair of forms in the 'Binds' tab works like so: left is for binds, right is for duration (in milliseconds).`nShift+X -> {Shift down}x`n24s -> 24000`n`nYou'll have to wrap your bind in curly brackets if it's longer than two characters (ex: {Home} key would be sent as h+o+m+e bind sequence instead of literal 'Home' key if not wrapped in curly brackets). Also no need to wrap your modifier binds in down/up release events as the documentation shows. A down event prefix is enough because the script will automatically release all the three modifiers once the bind is sent. This is needed to avoid issues with latency and to simplify the form.`n`nIt's also possible to save configs in the 'Advanced' tab by adding a config.ini file in the same folder as this script and filling it like so:`n`n[Advanced]`nConfirmDelay=123`nStartcraftDelay=123`nEndcraftDelay=123
+Gui, Add, Edit, Wrap ReadOnly r10 w200, The pair of forms in the 'Binds' tab works like so: left is for binds, right is for duration (in milliseconds).`nShift+X -> {Shift down}x`n24s -> 24000`n`nYou'll have to wrap your bind in curly brackets if it's longer than two characters (ex: {Home} key would be sent as h+o+m+e bind sequence instead of literal 'Home' key if not wrapped in curly brackets). `n`nAlso no need to wrap your modifier binds in down/up release events as the documentation shows. A down event prefix is enough because the script will automatically release all the three modifiers once the bind is sent. This is needed to avoid issues with latency and to simplify the form.
 Gui, Add, Link, w200, List of key names <a href="https://www.autohotkey.com/docs/commands/Send.htm#keynames">here</a>.`nBinds documentation <a href="https://www.autohotkey.com/docs/commands/Send.htm#Parameters">here</a>.
 Gui, Tab
 
@@ -170,6 +175,32 @@ CancelLoop:
 GuiControl, Disable, CancelButton
 GuiControl, Enable, StartButton
 stopLoop := 1
+return
+
+SaveConfirmDelay:
+Gui, Submit, NoHide
+IniWrite, %ConfirmDelay%, config.ini, Advanced, ConfirmDelay
+return
+SaveStartcraftDelay:
+Gui, Submit, NoHide
+IniWrite, %StartcraftDelay%, config.ini, Advanced, StartcraftDelay
+return
+SaveEndcraftDelay:
+Gui, Submit, NoHide
+IniWrite, %EndcraftDelay%, config.ini, Advanced, EndcraftDelay
+return
+
+ResetConfirmDelay:
+GuiControl, Text, ConfirmDelay, 600
+IniDelete, config.ini, Advanced, ConfirmDelay
+return
+ResetStartcraftDelay:
+GuiControl, Text, StartcraftDelay, 1200
+IniDelete, config.ini, Advanced, StartcraftDelay
+return
+ResetEndcraftDelay:
+GuiControl, Text, EndcraftDelay, 2500
+IniDelete, config.ini, Advanced, EndcraftDelay
 return
 
 GuiClose:
