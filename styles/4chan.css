@@ -24,6 +24,8 @@ html.yotsuba {
 body.board_jp {
     /* Image #0 will also act as board-specific fallback */
     --bg-image-0: url(https://);
+    /* --bg-pos-0: left bottom; */
+    /* --bg-size-0: 300px auto; */
     /* --bg-image-1: url(https://); */
     /* --bg-image-2: url(https://); */
     /* --bg-image-3: url(https://); */
@@ -33,10 +35,6 @@ body.board_jp {
     /* --bg-image-7: url(https://); */
     /* --bg-image-8: url(https://); */
     /* --bg-image-9: url(https://); */
-}
-
-body.board_a {
-    --bg-pos-0: left bottom;
 }
 
 /* Sidebar */
