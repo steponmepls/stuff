@@ -59,6 +59,15 @@ body.is_index .thread:nth-of-type(2)[id$="7"]::before, body.is_thread .thread[id
 body.is_index .thread:nth-of-type(2)[id$="8"]::before, body.is_thread .thread[id$="8"]::before { background-image: var(--bg-image-8, var(--bg-image-0)); background-position: var(--bg-pos-8, var(--bg-pos-0)); background-size: var(--bg-size-8, var(--bg-size-0)); }
 body.is_index .thread:nth-of-type(2)[id$="9"]::before, body.is_thread .thread[id$="9"]::before { background-image: var(--bg-image-9, var(--bg-image-0)); background-position: var(--bg-pos-9, var(--bg-pos-0)); background-size: var(--bg-size-9, var(--bg-size-0)); }
 
+/* Icon bookmarks in Custom Board Nav */
+/* Examples to add in 4chanX > Advanced > Custom Board Navigation: 
+    external-text:"website","https://website.com/./"
+    external-text:"website","https://website.com/./?q=keyword"
+*/
+#custom-board-list a[href*="/./"] {font-size: 0px; margin-right: 16px;}
+#custom-board-list a[href*="/./"]::after {content:''; display: inline-block; position: absolute; width: 16px; height: 16px;}
+/* #custom-board-list a[href*="/./"][href*=website]::after {background: no-repeat center/16px url(https://)} */
+
 /* QR */
 body.board_b #qr { top: calc(var(--header-bar-height) + var(--qr-top-offset) + 45px) !important; }
 #qr { top: calc(var(--header-bar-height) + var(--qr-top-offset)) !important; left: 0 !important; border: 1px solid; border-left: none; border-right: none; border-radius: 0 !important; box-shadow: none; box-sizing: border-box; width: var(--sidebar-width); }
