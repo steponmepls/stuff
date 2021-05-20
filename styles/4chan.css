@@ -6,6 +6,8 @@
     --qr-top-offset: 140px;
     /* General fallback */
     --bg-image-0: url(https://);
+    --bg-pos-0: center bottom;
+    --bg-size-0: 280px auto;
 }
 
 html.yotsuba-b {
@@ -33,6 +35,10 @@ body.board_jp {
     /* --bg-image-9: url(https://); */
 }
 
+body.board_a {
+    --bg-pos-0: left bottom;
+}
+
 /* Sidebar */
 body { width: calc(100% - var(--sidebar-width)); float: right; }
 body::before {border-right: 1px solid;}
@@ -42,18 +48,18 @@ html.yotsuba body::before, html.yotsuba #qr, html.yotsuba #thread-watcher { bord
 #bannerCnt { margin: 0; border-left: 0; border-right: 0; }
 
 /* Sidebar Background */
-body.is_index .thread:nth-of-type(2)::before, body.is_thread .thread::before { background-position: center bottom; background-size: 280px auto; background-repeat: no-repeat; }
 body::before, body.is_index .thread:nth-of-type(2)::before, body.is_thread .thread::before { content: ''; display: block; width: var(--sidebar-width); height: calc(100vh - var(--header-bar-height)); position: fixed; top: var(--header-bar-height); left: 0; }
-body.is_index .thread:nth-of-type(2)[id$="0"]::before, body.is_thread .thread[id$="0"]::before { background-image: var(--bg-image-0); }
-body.is_index .thread:nth-of-type(2)[id$="1"]::before, body.is_thread .thread[id$="1"]::before { background-image: var(--bg-image-1, var(--bg-image-0)); }
-body.is_index .thread:nth-of-type(2)[id$="2"]::before, body.is_thread .thread[id$="2"]::before { background-image: var(--bg-image-2, var(--bg-image-0)); }
-body.is_index .thread:nth-of-type(2)[id$="3"]::before, body.is_thread .thread[id$="3"]::before { background-image: var(--bg-image-3, var(--bg-image-0)); }
-body.is_index .thread:nth-of-type(2)[id$="4"]::before, body.is_thread .thread[id$="4"]::before { background-image: var(--bg-image-4, var(--bg-image-0)); }
-body.is_index .thread:nth-of-type(2)[id$="5"]::before, body.is_thread .thread[id$="5"]::before { background-image: var(--bg-image-5, var(--bg-image-0)); }
-body.is_index .thread:nth-of-type(2)[id$="6"]::before, body.is_thread .thread[id$="6"]::before { background-image: var(--bg-image-6, var(--bg-image-0)); }
-body.is_index .thread:nth-of-type(2)[id$="7"]::before, body.is_thread .thread[id$="7"]::before { background-image: var(--bg-image-7, var(--bg-image-0)); }
-body.is_index .thread:nth-of-type(2)[id$="8"]::before, body.is_thread .thread[id$="8"]::before { background-image: var(--bg-image-8, var(--bg-image-0)); }
-body.is_index .thread:nth-of-type(2)[id$="9"]::before, body.is_thread .thread[id$="9"]::before { background-image: var(--bg-image-9, var(--bg-image-0)); }
+body.is_index .thread:nth-of-type(2)::before, body.is_thread .thread::before { background-repeat: no-repeat; }
+body.is_index .thread:nth-of-type(2)[id$="0"]::before, body.is_thread .thread[id$="0"]::before { background-image: var(--bg-image-0); background-position: var(--bg-pos-0); background-size: var(--bg-size-0); }
+body.is_index .thread:nth-of-type(2)[id$="1"]::before, body.is_thread .thread[id$="1"]::before { background-image: var(--bg-image-1, var(--bg-image-0)); background-position: var(--bg-pos-1, var(--bg-pos-0)); background-size: var(--bg-size-1, var(--bg-size-0)); }
+body.is_index .thread:nth-of-type(2)[id$="2"]::before, body.is_thread .thread[id$="2"]::before { background-image: var(--bg-image-2, var(--bg-image-0)); background-position: var(--bg-pos-2, var(--bg-pos-0)); background-size: var(--bg-size-2, var(--bg-size-0)); }
+body.is_index .thread:nth-of-type(2)[id$="3"]::before, body.is_thread .thread[id$="3"]::before { background-image: var(--bg-image-3, var(--bg-image-0)); background-position: var(--bg-pos-3, var(--bg-pos-0)); background-size: var(--bg-size-3, var(--bg-size-0)); }
+body.is_index .thread:nth-of-type(2)[id$="4"]::before, body.is_thread .thread[id$="4"]::before { background-image: var(--bg-image-4, var(--bg-image-0)); background-position: var(--bg-pos-4, var(--bg-pos-0)); background-size: var(--bg-size-4, var(--bg-size-0)); }
+body.is_index .thread:nth-of-type(2)[id$="5"]::before, body.is_thread .thread[id$="5"]::before { background-image: var(--bg-image-5, var(--bg-image-0)); background-position: var(--bg-pos-5, var(--bg-pos-0)); background-size: var(--bg-size-5, var(--bg-size-0)); }
+body.is_index .thread:nth-of-type(2)[id$="6"]::before, body.is_thread .thread[id$="6"]::before { background-image: var(--bg-image-6, var(--bg-image-0)); background-position: var(--bg-pos-6, var(--bg-pos-0)); background-size: var(--bg-size-6, var(--bg-size-0)); }
+body.is_index .thread:nth-of-type(2)[id$="7"]::before, body.is_thread .thread[id$="7"]::before { background-image: var(--bg-image-7, var(--bg-image-0)); background-position: var(--bg-pos-7, var(--bg-pos-0)); background-size: var(--bg-size-7, var(--bg-size-0)); }
+body.is_index .thread:nth-of-type(2)[id$="8"]::before, body.is_thread .thread[id$="8"]::before { background-image: var(--bg-image-8, var(--bg-image-0)); background-position: var(--bg-pos-8, var(--bg-pos-0)); background-size: var(--bg-size-8, var(--bg-size-0)); }
+body.is_index .thread:nth-of-type(2)[id$="9"]::before, body.is_thread .thread[id$="9"]::before { background-image: var(--bg-image-9, var(--bg-image-0)); background-position: var(--bg-pos-9, var(--bg-pos-0)); background-size: var(--bg-size-9, var(--bg-size-0)); }
 
 /* QR */
 body.board_b #qr { top: calc(var(--header-bar-height) + var(--qr-top-offset) + 45px) !important; }
