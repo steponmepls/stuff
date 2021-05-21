@@ -43,12 +43,12 @@ body { width: calc(100% - var(--sidebar-width)); float: right; }
 body::before {border-right: 1px solid;}
 html.yotsuba-b body::before, html.yotsuba-b #qr, html.yotsuba-b #thread-watcher { border-color: var(--border-color); }
 html.yotsuba body::before, html.yotsuba #qr, html.yotsuba #thread-watcher { border-color: var(--border-color); }
-.boardBanner { position: fixed; top: var(--header-bar-height); left: 0; width: var(--sidebar-width); }
+.boardBanner { position: fixed; top: var(--header-bar-height); left: 0; width: var(--sidebar-width); z-index: 7; }
 #bannerCnt { margin: 0; border-left: 0; border-right: 0; }
 
 /* Sidebar Background */
-body::before, body.is_index .thread:nth-of-type(2)::before, body.is_thread .thread::before { content: ''; display: block; width: var(--sidebar-width); height: calc(100vh - var(--header-bar-height)); position: fixed; top: var(--header-bar-height); left: 0; }
-body.is_index .thread:nth-of-type(2)::before, body.is_thread .thread::before { background-repeat: no-repeat; }
+body::before, body.is_index .thread:last-of-type::before, body.is_thread .thread::before { content: ''; display: block; width: var(--sidebar-width); height: calc(100vh - var(--header-bar-height)); position: fixed; top: var(--header-bar-height); left: 0; }
+body.is_index .thread:last-of-type::before, body.is_thread .thread::before { background-repeat: no-repeat; }
 
 /* Attempt at new logic - Source: >>>/g/81712409 */
 body.is_index .thread:last-of-type[id$="1"]::before, body.is_thread .thread[id$="1"]::before {
