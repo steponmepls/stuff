@@ -58,48 +58,48 @@ body.is_index .thread:last-of-type[id$="1"]::before, body.is_thread .thread[id$=
 }
 body.is_index .thread:last-of-type[id$="2"]::before, body.is_thread .thread[id$="2"]::before {
     background-image: var(--bg-image-2, var(--bg-image-1));
-    background-position: var(--bg-pos-2, var(--bg-image-1));
-    background-size: var(--bg-size-2, var(--bg-image-1));
+    background-position: var(--bg-pos-2, var(--bg-pos-1));
+    background-size: var(--bg-size-2, var(--bg-size-1));
 }
 body.is_index .thread:last-of-type[id$="3"]::before, body.is_thread .thread[id$="3"]::before {
     background-image: var(--bg-image-3, var(--bg-image-1));
-    background-position: var(--bg-pos-3, var(--bg-image-1));
-    background-size: var(--bg-size-3, var(--bg-image-1));
+    background-position: var(--bg-pos-3, var(--bg-pos-1));
+    background-size: var(--bg-size-3, var(--bg-size-1));
 }
 body.is_index .thread:last-of-type[id$="4"]::before, body.is_thread .thread[id$="4"]::before {
     background-image: var(--bg-image-4, var(--bg-image-1));
-    background-position: var(--bg-pos-4, var(--bg-image-1));
-    background-size: var(--bg-size-4, var(--bg-image-1));
+    background-position: var(--bg-pos-4, var(--bg-pos-1));
+    background-size: var(--bg-size-4, var(--bg-size-1));
 }
 body.is_index .thread:last-of-type[id$="5"]::before, body.is_thread .thread[id$="5"]::before {
     background-image: var(--bg-image-5, var(--bg-image-1));
-    background-position: var(--bg-pos-5, var(--bg-image-1));
-    background-size: var(--bg-size-5, var(--bg-image-1));
+    background-position: var(--bg-pos-5, var(--bg-pos-1));
+    background-size: var(--bg-size-5, var(--bg-size-1));
 }
 body.is_index .thread:last-of-type[id$="6"]::before, body.is_thread .thread[id$="6"]::before {
     background-image: var(--bg-image-6, var(--bg-image-1));
-    background-position: var(--bg-pos-6, var(--bg-image-1));
-    background-size: var(--bg-size-6, var(--bg-image-1));
+    background-position: var(--bg-pos-6, var(--bg-pos-1));
+    background-size: var(--bg-size-6, var(--bg-size-1));
 }
 body.is_index .thread:last-of-type[id$="7"]::before, body.is_thread .thread[id$="7"]::before {
     background-image: var(--bg-image-7, var(--bg-image-2, var(--bg-image-1)));
-    background-position: var(--bg-pos-7, var(--bg-image-2, var(--bg-image-1)));
-    background-size: var(--bg-size-7, var(--bg-image-2, var(--bg-image-1)));
+    background-position: var(--bg-pos-7, var(--bg-pos-2, var(--bg-pos-1)));
+    background-size: var(--bg-size-7, var(--bg-size-2, var(--bg-size-1)));
 }
 body.is_index .thread:last-of-type[id$="8"]::before, body.is_thread .thread[id$="8"]::before {
     background-image: var(--bg-image-8, var(--bg-image-3, var(--bg-image-1)));
-    background-position: var(--bg-pos-8, var(--bg-image-3, var(--bg-image-1)));
-    background-size: var(--bg-size-8, var(--bg-image-3, var(--bg-image-1)));
+    background-position: var(--bg-pos-8, var(--bg-pos-3, var(--bg-pos-1)));
+    background-size: var(--bg-size-8, var(--bg-size-3, var(--bg-size-1)));
 }
 body.is_index .thread:last-of-type[id$="9"]::before, body.is_thread .thread[id$="9"]::before {
     background-image: var(--bg-image-9, var(--bg-image-4, var(--bg-image-1)));
-    background-position: var(--bg-pos-9, var(--bg-image-4, var(--bg-image-1)));
-    background-size: var(--bg-size-9, var(--bg-image-4, var(--bg-image-1)));
+    background-position: var(--bg-pos-9, var(--bg-pos-4, var(--bg-pos-1)));
+    background-size: var(--bg-size-9, var(--bg-size-4, var(--bg-size-1)));
 }
 body.is_index .thread:last-of-type[id$="0"]::before, body.is_thread .thread[id$="0"]::before {
     background-image: var(--bg-image-0, var(--bg-image-5, var(--bg-image-1)));
-    background-position: var(--bg-pos-0, var(--bg-image-5, var(--bg-image-1)));
-    background-size: var(--bg-size-0, var(--bg-image-5, var(--bg-image-1)));
+    background-position: var(--bg-pos-0, var(--bg-pos-5, var(--bg-pos-1)));
+    background-size: var(--bg-size-0, var(--bg-size-5, var(--bg-size-1)));
 }
 
 /* Icon bookmarks in Custom Board Nav */
