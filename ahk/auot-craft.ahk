@@ -7,9 +7,9 @@ SetTitleMatchMode, 2
 winclass = FFXIVGAME
 
 ; Look for possible configs
-IniRead, ConfirmDelayValue, config.ini, Advanced, ConfirmDelay, 600
-IniRead, StartcraftDelayValue, config.ini, Advanced, StartcraftDelay, 1200
-IniRead, EndcraftDelayValue, config.ini, Advanced, EndcraftDelay, 2500
+IniRead, ConfirmDelayValue, auto-craft.ini, Advanced, ConfirmDelay, 600
+IniRead, StartcraftDelayValue, auto-craft.ini, Advanced, StartcraftDelay, 1200
+IniRead, EndcraftDelayValue, auto-craft.ini, Advanced, EndcraftDelay, 2500
 
 Gui, New
 Gui, Add, Tab3, Wrap, Binds|Advanced|Debug|Help
@@ -179,28 +179,28 @@ return
 
 SaveConfirmDelay:
 Gui, Submit, NoHide
-IniWrite, %ConfirmDelay%, config.ini, Advanced, ConfirmDelay
+IniWrite, %ConfirmDelay%, auto-craft.ini, Advanced, ConfirmDelay
 return
 SaveStartcraftDelay:
 Gui, Submit, NoHide
-IniWrite, %StartcraftDelay%, config.ini, Advanced, StartcraftDelay
+IniWrite, %StartcraftDelay%, auto-craft.ini, Advanced, StartcraftDelay
 return
 SaveEndcraftDelay:
 Gui, Submit, NoHide
-IniWrite, %EndcraftDelay%, config.ini, Advanced, EndcraftDelay
+IniWrite, %EndcraftDelay%, auto-craft.ini, Advanced, EndcraftDelay
 return
 
 ResetConfirmDelay:
 GuiControl, Text, ConfirmDelay, 600
-IniDelete, config.ini, Advanced, ConfirmDelay
+IniDelete, auto-craft.ini, Advanced, ConfirmDelay
 return
 ResetStartcraftDelay:
 GuiControl, Text, StartcraftDelay, 1200
-IniDelete, config.ini, Advanced, StartcraftDelay
+IniDelete, auto-craft.ini, Advanced, StartcraftDelay
 return
 ResetEndcraftDelay:
 GuiControl, Text, EndcraftDelay, 2500
-IniDelete, config.ini, Advanced, EndcraftDelay
+IniDelete, auto-craft.ini, Advanced, EndcraftDelay
 return
 
 GuiClose:
