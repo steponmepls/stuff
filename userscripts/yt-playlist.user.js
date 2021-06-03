@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name 4chanX YouTube Playlists for /jp/
-// @version 1.2.7
+// @version 1.3
 // @namespace 4chan-X-jp-playlist
 // @description Wraps all YouTube links within a thread into an embedded playlist
 // @include https://boards.4channel.org/jp/thread/*
@@ -22,262 +22,353 @@
 // -----------------------------------------------------------------|
 
 (function() {
-    'use strict';
-
-    const thread = {};
-    let container, mediaEmbed, player, playlist, 
-        needsUpdate = false, isPlaying = false, currentVideo,
-        toggle, qr, jumpTo, closeEmbed, pager;
-
     document.addEventListener("4chanXInitFinished", function (e) {
-        document.querySelectorAll(".thread .postContainer").forEach(post => {
-            let fullid = post.getAttribute("data-full-i-d");
-            fetchIds(fullid, post);
-        });
-        
-        // Init YouTube Iframe API if thread already contains ids
-        if (Object.entries(thread).length > 0) {
-            let script = document.createElement("script");
-            script.src = "https://www.youtube.com/iframe_api";
-            document.head.appendChild(script);
-        };
 
-        // Append player container in #embedding popup
-        container = document.createElement("div");
-        container.id = "ytplaylist";
-        mediaEmbed = document.querySelector("#media-embed");
-        mediaEmbed.appendChild(container);
+        // Fetch ids from thread
+        const threadIds = {};
+        let needsUpdate = false;
+        const thread = document.querySelector(".board > .thread"),
+            posts = thread.querySelectorAll(".postContainer");
+        for (const post of posts) {
+            const fullId = post.getAttribute("data-full-i-d");
+            fetchIds(fullId);
+        }
 
-        // Fetch new/removed ids and update playlist
         document.addEventListener("ThreadUpdate", function (e) {
             if (e.detail[404] === false) {
-                // If new posts
                 if (e.detail.newPosts.length > 0) {
-                    let newPosts = e.detail.newPosts;
-                    newPosts.forEach(fullid => { fetchIds(fullid) });
-                }
-                // If deleted posts
-                if (e.detail.deletedPosts.length > 0) {
-                    let delPosts = e.detail.newPosts;
-                    delPosts.forEach(fullid => {
-                        if (Object.keys(thread).includes(fullid)) {
-                            if (!needsUpdate) { needsUpdate = true };
-                            delete thread[fullid];
-                        }
-                    });
-                };
-                // Init playlist if new ids are added for the first time
-                if (typeof player === "undefined" && Object.entries(thread).length > 0) {
-                    let script = document.createElement("script");
-                    script.src = "https://www.youtube.com/iframe_api";
-                    document.head.appendChild(script);
-                };
-                // Refresh playlist if not playing and needs update
-                if (player && !isPlaying && needsUpdate) { updatePlaylist() };
-                // Debug
-                // console.debug(thread);
-            }
-        });
-
-        // Add toggle to topbar
-        toggle = document.createElement("span");
-        toggle.id = "shortcut-youtube";
-        toggle.classList.add("shortcut");
-        toggle.innerHTML = '<a class="fa fa-youtube-play disabled" title="Toggle YouTube Playlist" href="javascript:;">YT</a>';
-        qr = document.querySelector("#header-bar #shortcuts #shortcut-qr");
-        qr.parentNode.insertBefore(toggle, qr);
-        toggle.querySelector("a").onclick = (e) => {
-            e.preventDefault();
-            if (Object.entries(thread).length > 0) {
-                if (typeof player !== "undefined") {
-                    let container = document.querySelector("#embedding");
-                    container.classList.toggle("empty");
-                    e.target.classList.toggle("disabled");
-                } else {
-                    sendNotif("error", "Unable to load YouTube Iframe API.\nPress F12 and check for errors in the console.");
-                    console.error("Unable to load YouTube Iframe API.\n" +
-                        "Remember to add the following exceptions:\n" +
-                        "4chanX's Settings > Advanced > Javascript Whitelist\n" +
-                        "- https://www.youtube.com/iframe_api\n" +
-                        "- https://www.youtube.com/s/player/\n" +
-                        "Filters in your AdBlock extension\n" +
-                        "- @@||www.youtube.com/iframe_api$script,domain=4channel.org\n" +
-                        "- @@||www.youtube.com/s/player/*$script,domain=4channel.org\n"
-                    );
-                }
-            } else {
-                sendNotif("warning", "No valid links in this thread. :c", 3);
-            };
-        };
-
-        // Embedding popup tweaks
-        jumpTo = document.querySelector("#embedding a.jump");
-        jumpTo.addEventListener("click", (e) => {
-            e.preventDefault();
-            let id = Object.entries(thread).find(post => post[1].includes(currentVideo))[0];
-            document.querySelector(".postContainer[data-full-i-d='" + id + "']").scrollIntoView();
-        });
-        closeEmbed = document.querySelector("#embedding a.close");
-        closeEmbed.addEventListener("click", (e) => {
-            e.preventDefault();
-            toggle.querySelector("a").classList.add("disabled");
-        });
-        pager = document.createElement("span");
-        pager.id = "ytplaylist-pager";
-        jumpTo.parentNode.insertBefore(pager, jumpTo);
-    });
-
-    // Generate playlist iframe
-    window.onYouTubeIframeAPIReady = function () {
-        playlist = splitPlaylist([...new Set(Object.values(thread).flat())], 200);
-        player = new YT.Player('ytplaylist', {
-            width: '512',
-            height: '288',
-            playerVars: {
-                'fs': 0,
-                'disablekb': 1,
-                'modestbranding': 1,
-                'playlist': playlist[0].toString()
-            },
-            events: {
-                "onError": function (e) {
-                    let errLvl, errMsg, index, total, output;
-                    if (e.data == 101 || e.data == 150) {
-                        errLvl = "warning";
-                        errMsg = "The owner of the requested video does not allow it to be played in embedded players.";
-                    } else if (e.data == 2) {
-                        errLvl = "error";
-                        errMsg = "The request contains an invalid parameter value.";
-                    } else if (e.data == 5) {
-                        errLvl = "error";
-                        errMsg = "The requested content cannot be played in an HTML5 player.";
-                    } else if (e.data == 100) {
-                        errLvl = "warning";
-                        errMsg = "The video has been removed or marked as private.";
+                    const newPosts = e.detail.newPosts;
+                    for (const fullId of newPosts) {
+                        fetchIds(fullId)
                     };
-                    index = e.target.getPlaylistIndex() + 1;
-                    total = e.target.getPlaylist().length;
-                    output = "Error - Video #" + index + "\n" + errMsg;
-                    console.warn(output);
-                    sendNotif(errLvl, output, 10);
-                    // Automatically skip to next video on error
-                    if (index < total) { e.target.nextVideo() };
-                },
-                "onReady": function (e) {
-                    // Defuse double update on first load
-                    needsUpdate = false;
-                    // Init first track record
-                    currentVideo = e.target.getVideoUrl().split("=").pop();
-                    // Init pages
-                    updatePager();
-                },
-                "onStateChange": function (e) {
-                    // -1 unstarted; 0 ended; 1 playing; 2 paused; 3 buffering; 5 video cued
-                    // console.debug("#" + (e.target.getPlaylistIndex() + 1) + " [" + e.data + "]");
-                    if (e.data == 0 && needsUpdate) { updatePlaylist(e.data) };
-                    if (e.data == 1 || e.data == 3) { isPlaying = true } else { isPlaying = false };
-                    if (e.data == -1) { 
-                        let newVideo = e.target.getVideoUrl().split("=").pop();
-                        if (currentVideo !== newVideo) { currentVideo = newVideo };
-                     };
                 }
-            }
-        });
-    };
-
-    function fetchIds(id, p) {
-        let post = p;
-        if (typeof post === "undefined") {
-            // data-full-i-d assignment seems to be too slow on low spec machines
-            // so I moved to a simpler id check for newly added posts
-            post = document.querySelector(".postContainer[id$='" + id.split(".").pop() + "']");
-        }
-        if (post.querySelector("a.linkify.youtube")) {
-            let postIds = [];
-            post.querySelectorAll("a.linkify.youtube + a.embedder").forEach(link => {
-                let uid = link.getAttribute("data-uid")
-                postIds.push(uid);
-                if (!Object.values(thread).flat().includes(uid) && !needsUpdate) {
-                    needsUpdate = true;
-                };
-            });
-            if (postIds.length > 0) { thread[id] = postIds };
-        };
-    };
-
-    function splitPlaylist(array, chunk) {
-        let i = 0, output = [];
-        while (i < array.length) {
-            output.push(array.splice(0, chunk));
-            i++;
-        };
-        return output;
-    };
-
-    function updatePlaylist(state) {
-        let playlist = splitPlaylist([...new Set(Object.values(thread).flat())], 200);
-        let pages = document.querySelectorAll("#ytplaylist-pager a[data-page]");
-        
-        // Reset pager if number of pages and chunked playlist length doesn't match
-        if (pages.length !== playlist.length) { updatePager(pages) };
-
-        // Check through possible playlist pages aka +200 items
-        playlist.forEach((page, index) => {
-            // Only replace current playlist page
-            if (page.includes(currentVideo)) {
-                let cTrack = player.getPlaylistIndex();
-                // The empty call + 500ms delayed call is a workaround for a bug
-                // in the API. https://stackoverflow.com/questions/66188481
-                if (isPlaying && state == 0) {
-                    // console.debug("loadPlaylist() - isPlaying: " + isPlaying + " state: " + state);
-                    player.loadPlaylist();
-                    setTimeout(function () { player.loadPlaylist(page, cTrack); }, 500);
-                } else {
-                    // console.debug("cuePlaylist() - isPlaying: " + isPlaying + " state: " + state);
-                    let cTrack, cTime = player.getCurrentTime();
-                    player.cuePlaylist();
-                    setTimeout(function () { player.cuePlaylist(page, cTrack, cTime) }, 500);
-                    // cuePlaylist() fails to update playlist without resuming playback,
-                    // while stopVideo() is a dirty hotfix preventing it from happening.
-                    // You can manually reproduce the issue here: https://jsfiddle.net/Lz1053sr/
-                    player.stopVideo();
+                if (e.detail.deletedPosts.length > 0) {
+                    const delPosts = e.detail.deletedPosts;
+                    for (const fullId of delPosts) {
+                        if (Object.keys(threadIds).includes(fullId)) {
+                            delete threadIds[fullId];
+                            needsUpdate = true;
+                        }
+                    }
                 };
             };
         });
 
-        // Reset mutation check
-        needsUpdate = false;
-    };
+        const qrToggle = document.getElementById("shortcut-qr"),
+            eDialog = document.getElementById("embedding"),
+            eMedia = document.getElementById("media-embed"),
+            eMove = eDialog.querySelector(".move");
+        
+        const dToggle = document.createElement("span"),
+            eToggle = document.createElement("a");
 
-    function updatePager(pages) {
-        if (typeof pages !== "undefined") {
-            pages.forEach(page => { page.parentNode.removeChild(page) });
-        }
-        playlist.forEach((chunk, index) => {
-            let newPage = document.createElement("a");
-            newPage.href = "javascript:;";
-            newPage.setAttribute("data-page", (index + 1));
-            newPage.innerHTML = index + 1;
-            newPage.style = "padding: 0 2px;"
-            pager.appendChild(newPage);
-            newPage.addEventListener("click", (e) => {
-                e.preventDefault();
-                let chunkedPlaylist = splitPlaylist([...new Set(Object.values(thread).flat())], 200);
-                player.cuePlaylist();
-                setTimeout(function () { player.cuePlaylist( chunkedPlaylist[e.target.getAttribute("data-page") - 1] ) }, 500);
-            });
-        });
-    };
+        // Add toggle to headerbar
+        dToggle.id = "shortcut-youtube";
+        dToggle.classList.add("shortcut");
+        dToggle.innerHTML = `<a class="fa fa-window-maximize disabled" title="Toggle embed dialog" href="javascript:;">Embed</a>`;
+        qrToggle.parentNode.insertBefore(dToggle, qrToggle);
+        dToggle.querySelector("a").onclick = (e) => {
+            e.preventDefault();
+            if (playlistReady) {
+                if (eMedia.querySelector("iframe")) {
+                    e.target.classList.toggle("disabled");
+                    eDialog.classList.toggle("empty");
+                } else {
+                    initAPI();
+                }
+            };
+        };
 
-    function sendNotif(type, msg, lifetime) {
-        let event = new CustomEvent("CreateNotification", {
-            "detail": {
-                'type': type,
-                'content': msg,
-                'lifetime': lifetime // optional
+        // Add toggle to embed dialog
+        eToggle.classList.add("fa", "fa-list-ul", "togglePlaylist");
+        eToggle.href = "javascript:;";
+        eMove.parentNode.insertBefore(eToggle, eMove);
+        eToggle.onclick = (e) => {
+            e.preventDefault();
+            if (eDialog.classList.contains("has-embed") && 
+                eDialog.querySelector("iframe#ytplaylist")) {
+                eDialog.classList.toggle("show-embed")
+            } else {
+                initAPI();
+            };
+        };
+
+        // Needed so I don't have to add listeners to each (embed) link
+        const eObserver = new MutationObserver( () => {
+            if (eMedia.querySelector(".media-embed")) {
+                eDialog.classList.add("has-embed");
+                eDialog.classList.add("show-embed");
+                dToggle.querySelector("a").classList.remove("disabled");
+            } else {
+                eDialog.classList.remove("has-embed");
+                eDialog.classList.remove("show-embed");
+                dToggle.querySelector("a").classList.add("disabled");
             }
         });
-        document.dispatchEvent(event);
-    };
+        eObserver.observe(eMedia, { childList: true });
 
+        // Styling
+        const css = document.createElement("style");
+        document.head.appendChild(css);
+        css.innerHTML = `
+            #embedding:not(.has-embed) .togglePlaylist,
+            #embedding.show-embed #ytplaylist-pager,
+            #embedding:not(.show-embed) .jump.legacy,
+            #embedding.show-embed .jump:not(.legacy),
+            #embedding:not(.show-embed) .media-embed,
+            #embedding.show-embed #ytplaylist {
+                display: none;
+            }
+        `;
+
+        // Add playlist container to embed dialog
+        const pContainer = document.createElement("div");
+        pContainer.innerHTML = `<div id="ytplaylist"></div>`;
+
+        // Add playlist pager to embed dialog
+        const ePager = document.createElement("div")
+        ePager.id = "ytplaylist-pager";
+        eMove.parentNode.insertBefore(ePager, eMove);
+
+        // Populate playlist container
+        window.onYouTubeIframeAPIReady = function () {
+            let isPlaying = false, cLength, cTrack, cIndex = 0;
+
+            const filteredIds = [...new Set(Object.values(threadIds).flat())], 
+                pagedIds = splitPlaylist(filteredIds, 200), 
+                player = new YT.Player("ytplaylist", {
+                    width: '512',
+                    height: '288',
+                    playerVars: {
+                        'fs': 0,
+                        'disablekb': 1,
+                        'modestbranding': 1,
+                        'playlist': pagedIds[0].toString()
+                    },
+                    events: {
+                        "onReady": function(e) {
+                            needsUpdate = false;
+                            cTrack = e.target.getVideoUrl().split("=").pop();
+                            cLength = e.target.getPlaylist().length;
+                            updatePager();
+                        },
+                        "onStateChange": function(e) {
+                            if (e.data == 0) { // If track ended
+                                if (needsUpdate) { updatePlaylist(e.data) };
+                                // If last track of the page..
+                                if (cIndex === (cLength - 1)) {
+                                    const filteredIds = [...new Set(Object.values(threadIds).flat())],
+                                        pagedIds = splitPlaylist(filteredIds, 200);
+                                    
+                                    pagedIds.forEach((page, index) => {
+                                        // ..and if NOT last page of the playlist..
+                                        if (isPlaying && page.includes(cTrack) && 
+                                            index !== pagedIds.length) {
+                                            e.target.loadPlaylist();
+                                            setTimeout(() => { e.target.loadPlaylist(pagedIds[index + 1]) }, 500);
+                                        }
+                                    });
+                                };
+                             };
+                            if (e.data == -1) { // If next track is loaded
+                                cTrack = e.target.getVideoUrl().split("=").pop();
+                                cIndex = e.target.getPlaylistIndex();
+                                cLength = e.target.getPlaylist().length;
+                                // console.debug("cTrack: " + cTrack + "\ncIndex: " + cIndex + "\ncLength: " + cLength);
+                            };
+                            // This has to stay at the bottom or it
+                            // will mess with prev isPlaying checks
+                            isPlaying = (e.data == 1 || e.data == 3) ? true : false;
+                        },
+                        "onError": function(e) {
+                            let errLvl, errMsg;
+                            if (e.data == 101 || e.data == 150) {
+                                errLvl = "warning";
+                                errMsg = "The owner of the requested video does not allow it to be played in embedded players.";
+                            } else if (e.data == 2) {
+                                errLvl = "error";
+                                errMsg = "The request contains an invalid parameter value.";
+                            } else if (e.data == 5) {
+                                errLvl = "error";
+                                errMsg = "The requested content cannot be played in an HTML5 player.";
+                            } else if (e.data == 100) {
+                                errLvl = "warning";
+                                errMsg = "The video has been removed or marked as private.";
+                            };
+                            const index = e.target.getPlaylistIndex() + 1,
+                                total = e.target.getPlaylist().length,
+                                output = "Error - Video #" + index + "\n" + errMsg;
+                            console.warn(output);
+                            sendNotif(errLvl, output, 10);
+                            // Only skip if not at the end of the playlist
+                            if (index < total) { e.target.nextVideo() };
+                        }
+                    }
+            });
+
+            // Add playlist's own jumpTo
+            const lJumpto = eDialog.querySelector(".jump"),
+                pJumpto = lJumpto.cloneNode(true);
+            lJumpto.classList.add("legacy");
+            lJumpto.parentNode.insertBefore(pJumpto, lJumpto);
+            pJumpto.onclick = (e) => {
+                e.preventDefault();
+                const id = Object.entries(threadIds).find(post => post[1].includes(cTrack))[0];
+                thread.querySelector("[data-full-i-d=\"" + id + "\"]").scrollIntoView();
+            };
+            
+            // Attempt to update playlist if not playing
+            document.addEventListener("ThreadUpdate", function (e) {
+                const filteredIds = [...new Set(Object.values(threadIds).flat())],
+                    pagedIds = splitPlaylist(filteredIds, 200);
+                pagedIds.forEach((page, index) => {
+                    if (page.includes(cTrack) && cLength !== page.length) {
+                        needsUpdate = true
+                    }
+                });
+                if (!isPlaying && needsUpdate) { updatePlaylist() };
+            });
+
+            function updatePlaylist(state) {
+                console.debug("Updating playlist");
+                const filteredIds = [...new Set(Object.values(threadIds).flat())],
+                    pagedIds = splitPlaylist(filteredIds, 200),
+                    pagesList = ePager.querySelectorAll("a[data-page]");
+
+                // Refresh pager only when needed
+                if (pagesList.length !== pagedIds.length) { updatePager(pagesList) };
+
+                pagedIds.forEach((page, index) => {
+                    if (page.includes(cTrack)) {
+                        // The empty calls are needed because of this
+                        // https://stackoverflow.com/questions/66188481
+                        if (isPlaying && state === 0) {
+                            console.debug("loadPlaylist()");
+                            player.loadPlaylist();
+                            setTimeout(()=>{ player.loadPlaylist(page, (cIndex + 1)) }, 500);
+                        } else {
+                            const cTime = player.getCurrentTime();
+                            console.debug("cuePlaylist()");
+                            player.cuePlaylist();
+                            setTimeout(()=>{ player.cuePlaylist(page, cIndex, cTime) }, 500);
+                        }
+                    }
+                });
+
+                // Reset mutation check
+                needsUpdate = false;
+            }
+
+            function updatePager(pages) {
+                const filteredIds = [...new Set(Object.values(threadIds).flat())],
+                    pagedIds = splitPlaylist(filteredIds, 200);
+
+                if (typeof pages !== "undefined") {
+                    for (const page of pages) {
+                        page.parentNode.removeChild(page)
+                    };
+                }
+
+                pagedIds.forEach((chunk, index) => {
+                    const newPage = document.createElement("a");
+                    newPage.href = "javascript:;";
+                    newPage.setAttribute("data-page", index);
+                    newPage.innerHTML = index + 1;
+                    newPage.style = "padding: 0 2px;"
+                    ePager.appendChild(newPage);
+                    newPage.addEventListener("click", (e) => {
+                        e.preventDefault();
+                        const filteredIds = [...new Set(Object.values(threadIds).flat())],
+                            pagedIds = splitPlaylist(filteredIds, 200),
+                            pageNum = e.target.getAttribute("data-page");
+                        player.cuePlaylist();
+                        setTimeout(()=>{ player.cuePlaylist( pagedIds[pageNum] ) }, 500);
+                    });
+                });
+            };
+
+            function splitPlaylist(array, chunk) {
+                let i = 0;
+                const output = [];
+                while (i < array.length) {
+                    output.push(array.splice(0, chunk));
+                    i++;
+                };
+                return output;
+            };
+
+        };
+
+        // Functions
+        function fetchIds(id) {
+            const post = thread.querySelector(".postContainer[id$=\"" +
+                id.split(".").pop() + "\"]");
+            if (post.querySelector("a.linkify.youtube")) {
+                const postIds = [];
+                const links = post.querySelectorAll("a.linkify.youtube + a.embedder");
+                for (const link of links) {
+                    const rawIds = Object.values(threadIds).flat(),
+                        uId = link.getAttribute("data-uid");
+                    postIds.push(uId);
+                    if (!rawIds.includes(uId) && !needsUpdate) {
+                        needsUpdate = true;
+                    };
+                };
+                if (postIds.length > 0) { threadIds[id] = postIds };
+            }
+        };
+
+        function sendNotif(type, msg, lifetime) {
+            let event = new CustomEvent("CreateNotification", {
+                "detail": {
+                    'type': type,
+                    'content': msg,
+                    'lifetime': lifetime // optional
+                }
+            });
+            document.dispatchEvent(event);
+        };
+
+        function playlistReady() {
+            if (Object.entries(threadIds).length > 0) {
+                return true
+            } else {
+                sendNotif("warning", "No valid YouTube links in this thread.", 3);
+                return false
+            }
+        };
+
+        function initAPI() {
+            if (!document.getElementById("ytplaylist")) {
+                const script = document.createElement("script");
+                script.src = "https://www.youtube.com/iframe_api";
+                document.head.appendChild(script);
+                eMedia.appendChild(pContainer);
+                setTimeout(() => {
+                    if (!eMedia.querySelector("iframe#ytplaylist")) {
+                        failedToload();
+                    } else {
+                        dToggle.querySelector("a").classList.remove("disabled");
+                        eDialog.classList.remove("empty");
+                        eDialog.classList.remove("show-embed");
+                    }
+                }, 500);
+            } else if (!eMedia.querySelector("iframe#ytplaylist")) {
+                failedToload()
+            };
+        };
+
+        function failedToload() {
+            sendNotif("error", "Unable to load YouTube Iframe API.\nPress F12 and check for errors in the console.");
+            console.error("Unable to load YouTube Iframe API.\n" +
+                "Remember to add the following exceptions:\n" +
+                "4chanX's Settings > Advanced > Javascript Whitelist\n" +
+                " https://www.youtube.com/iframe_api\n" +
+                " https://www.youtube.com/s/player/\n" +
+                "Filters in your AdBlock extension\n" +
+                " @@||www.youtube.com/iframe_api$script,domain=4channel.org\n" +
+                " @@||www.youtube.com/s/player/*$script,domain=4channel.org\n"
+            );
+        };
+    });
 })();
