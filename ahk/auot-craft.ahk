@@ -11,24 +11,22 @@ IniRead, ConfirmDelayValue, auto-craft.ini, Advanced, ConfirmDelay, 600
 IniRead, StartcraftDelayValue, auto-craft.ini, Advanced, StartcraftDelay, 1200
 IniRead, EndcraftDelayValue, auto-craft.ini, Advanced, EndcraftDelay, 2500
 
+; Main
 Gui, New
-Gui, Add, Tab3, Wrap, Binds|Advanced|Debug|Help
-
+Gui, Add, Tab3, Wrap, Binds|Delay|Advanced
 Gui, Tab, 1
 Gui, Add, Text, Section, How many loops?
 Gui, Add, Edit, w200 vLoopFor Center Limit4 Number, 1
-
 Gui, Add, Text, xs, Macro #1
 Gui, Add, Edit, w99 vMacroBind1 Center 
 Gui, Add, Edit, x+2 w99 vMacroDur1 Center Limit6 Number
-
 Gui, Add, CheckBox, xs gToggleBind2 vToggleBind2, Macro #2
 Gui, Add, Edit, w99 vMacroBind2 Center Disabled
 Gui, Add, Edit, x+2 w99 vMacroDur2 Center Limit6 Number Disabled 
-
 Gui, Add, CheckBox, xs gToggleBind3 vToggleBind3 Disabled, Macro #3
 Gui, Add, Edit, w99 vMacroBind3 Center Disabled
-Gui, Add, Edit, x+2 w99 vMacroDur3 Center Limit6 Number Disabled 
+Gui, Add, Edit, x+2 w99 vMacroDur3 Center Limit6 Number Disabled
+Gui, Add, Link, xs w200, <a href="https://www.autohotkey.com/docs/commands/Send.htm#keynames">Key names</a> | <a href="https://www.autohotkey.com/docs/commands/Send.htm#Parameters">Formatting</a> | <a href="https://github.com/steponmepls/scripts/wiki/AutoCraft-Documentation">How to use?</a>
 Gui, Tab
 
 ; Footer
@@ -36,7 +34,7 @@ Gui, Add, Progress, Section w224 h20 BackgroundWhite vLoopProgress
 Gui, Add, Button, xs-1 w112 gStartLoop vStartButton, Start
 Gui, Add, Button, x+2 w112 gCancelLoop vCancelButton Disabled, Cancel
 
-; Advanced tab
+; Delay tab
 Gui, Tab, 2
 Gui, Add, Text, Section, Confirm delay
 Gui, Add, Edit, w65 vConfirmDelay Center Limit6 Number, %ConfirmDelayValue%
@@ -52,17 +50,11 @@ Gui, Add, Button, x+3 yp-1 w65 gSaveEndcraftDelay, Save
 Gui, Add, Button, x+2 w65 gResetEndcraftDelay, Reset
 Gui, Tab
 
-; Debug tab
+; Advanced tab
 Gui, Tab, 3
 Gui, Add, CheckBox, vCrafting Checked , Auto click on 'Synthesize'
 Gui, Add, CheckBox, vAutohide Checked , Minimize game window
 Gui, Add, CheckBox, gOnTop vOnTop Checked , Toggle 'Always on top'
-Gui, Tab
-
-; Help tab
-Gui, Tab, 4
-Gui, Add, Edit, Wrap ReadOnly r10 w200, The pair of forms in the 'Binds' tab works like so: left is for binds, right is for duration (in milliseconds).`nShift+X -> {Shift down}x`n24s -> 24000`n`nYou'll have to wrap your bind in curly brackets if it's longer than two characters (ex: {Home} key would be sent as h+o+m+e bind sequence instead of literal 'Home' key if not wrapped in curly brackets). `n`nAlso no need to wrap your modifier binds in down/up release events as the documentation shows. A down event prefix is enough because the script will automatically release all the three modifiers once the bind is sent. This is needed to avoid issues with latency and to simplify the form.
-Gui, Add, Link, w200, List of key names <a href="https://www.autohotkey.com/docs/commands/Send.htm#keynames">here</a>.`nBinds documentation <a href="https://www.autohotkey.com/docs/commands/Send.htm#Parameters">here</a>.
 Gui, Tab
 
 Gui, Show
