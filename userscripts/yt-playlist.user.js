@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name 4chanX YouTube Playlists for /jp/
-// @version 1.3
+// @version 1.3.1
 // @namespace 4chan-X-jp-playlist
 // @description Wraps all YouTube links within a thread into an embedded playlist
 // @include https://boards.4channel.org/jp/thread/*
@@ -32,7 +32,7 @@
         for (const post of posts) {
             const fullId = post.getAttribute("data-full-i-d");
             fetchIds(fullId);
-        }
+        };
 
         document.addEventListener("ThreadUpdate", function (e) {
             if (e.detail[404] === false) {
@@ -163,7 +163,7 @@
                                     pagedIds.forEach((page, index) => {
                                         // ..and if NOT last page of the playlist..
                                         if (isPlaying && page.includes(cTrack) && 
-                                            index !== pagedIds.length) {
+                                            index !== (pagedIds.length - 1)) {
                                             e.target.loadPlaylist();
                                             setTimeout(() => { e.target.loadPlaylist(pagedIds[index + 1]) }, 500);
                                         }
